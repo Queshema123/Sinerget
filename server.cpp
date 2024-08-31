@@ -34,11 +34,13 @@ void Server::setPathToFiles(const QString &path)
 
 QString Server::createResponce(const QString &path_to_file)
 {
-    return Converter::convertToPrometheus( path_to_file );
+    auto tokens = Converter::parseFile(path_to_file);
+    tokens_responces.push_back(tokens);
+    return Converter::convertToPrometheus( tokens );
 }
 
 void Server::prepareResponce()
-{ // Предусмотреть удаление файла, добавить переменную хранящую последнее количество файлов в папке
+{
     QDir dir(path_to_files);
     dir.setSorting(QDir::Name);
     dir.setFilter(QDir::Readable | QDir::Files);

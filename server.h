@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QFileSystemWatcher>
 #include <QFutureWatcher>
+#include "token.h"
 
 class Server : public QObject
 {
@@ -16,6 +17,7 @@ class Server : public QObject
     quint16 port;
     QString path_to_files, subdomain, last_parsed_file, file_separator;
     QStringList responces;
+    QVector<QVector<Token>> tokens_responces;
     QFileSystemWatcher* dir_watcher;
     QFutureWatcher<QString> file_watcher;
     int parsed_files_count;
@@ -27,7 +29,9 @@ public:
 
     void setPathToFiles(const QString &path);
     inline QString getPathToFiles() const { return path_to_files; }
-    inline QString getResponce() const { return responces.first(); }
+    inline QString getResponce() const { return (responces.size() > 0) ? responces.first() : ""; }
+    bool hasData() const { return tokens_responces.size() > 0; }
+    const QVector<Token>& getData() const { return tokens_responces.first(); }
 };
 
 #endif // SERVER_H

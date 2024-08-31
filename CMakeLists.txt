@@ -30,6 +30,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 	converter.h token.h
 	converter.cpp token.cpp
 	server.h server.cpp
+	serverwidget.h serverwidget.cpp
+	filterwidget.h filterwidget.cpp
+	type.h type.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
