@@ -51,9 +51,9 @@ const QMap<const String::Operations, QString> String::operations_view =
 };
 const QMap<const String::Operations, std::function<bool(QString l, QString r)>> String::operations_compare =
 {
-    {String::Operations::StartsWith, [](QString l, QString r){ return l.indexOf(r) == 0; }                   },
-    {String::Operations::EndsWith,   [](QString l, QString r){ return l.size() - l.indexOf(r) == r.size(); } },
-    {String::Operations::Contains,   [](QString l, QString r){ return l.indexOf(r) != -1; }                  },
+    {String::Operations::StartsWith, [](QString l, QString r){ return l.indexOf(r, 0, Qt::CaseInsensitive) == 0; }                   },
+    {String::Operations::EndsWith,   [](QString l, QString r){ return l.size() - l.indexOf(r, 0, Qt::CaseInsensitive) == r.size(); } },
+    {String::Operations::Contains,   [](QString l, QString r){ return l.indexOf( r, 0, Qt::CaseInsensitive ) != -1; }                  },
 };
 
 bool String::isContains(const QString& op) const

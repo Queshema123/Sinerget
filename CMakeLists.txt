@@ -16,6 +16,7 @@ find_package(Qt6 REQUIRED COMPONENTS HttpServer)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 find_package(Qt6 REQUIRED COMPONENTS Xml)
 find_package(Qt6 REQUIRED COMPONENTS Core5Compat)
+find_package(Qt6 REQUIRED COMPONENTS Network)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -33,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 	serverwidget.h serverwidget.cpp
 	filterwidget.h filterwidget.cpp
 	type.h type.cpp
+
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -58,6 +60,7 @@ target_link_libraries(SinergetProject PRIVATE Qt${QT_VERSION_MAJOR}::HttpServer)
 target_link_libraries(SinergetProject PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
 target_link_libraries(SinergetProject PRIVATE Qt${QT_VERSION_MAJOR}::Xml)
 target_link_libraries(SinergetProject PRIVATE Qt${QT_VERSION_MAJOR}::Core5Compat)
+target_link_libraries(SinergetProject PRIVATE Qt${QT_VERSION_MAJOR}::Network)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

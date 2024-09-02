@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QComboBox>
-#include <QSet>
+
 #include "token.h"
 #include "type.h"
 

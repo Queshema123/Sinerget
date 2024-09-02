@@ -7,7 +7,7 @@
 
 class Token
 {
-    QString metric_name;
+    QString metric_name, metric_value;
     QMultiMap<QString, QString> labels;
 public:
     explicit Token(const QString &metric_name = "", const QMap<QString, QString> &labels = {});
@@ -25,9 +25,11 @@ public:
     void deleteLabel(const QString& name);
 
     inline QString getMetricName() const { return metric_name; }
+    inline QString getMetricValue() const { return metric_value; }
     inline const QMultiMap<QString, QString>& getLabels() const { return labels; }
 
     inline void setMetricName(const QString &name) { metric_name = name; }
+    inline void setMetricValue(const QString& value) { metric_value = value; }
     void addLabel(const QString &name, const QString &value);
 };
 

@@ -80,7 +80,6 @@ void FilterWidget::fillFieldsBox(QComboBox* box)
 
     foreach (const QString& name, field_views.values() )
         box->addItem(name);
-
 }
 
 void FilterWidget::fillOperationsBox(const QString& field)
@@ -89,10 +88,10 @@ void FilterWidget::fillOperationsBox(const QString& field)
     box->clear();
 
     QStringList operations;
-    if( field_views.values().indexOf(field) != -1 )
-        operations = type_to_field.value( getFieldByName(field) )->getOperations();
-    else
+    if( getFieldByName(field) == Field::Labels )
         operations = getOperationsTo(field);
+    else
+        operations = type_to_field.value( getFieldByName(field) )->getOperations();
 
     foreach (const QString& operation, operations) {
         box->addItem(operation);
@@ -126,7 +125,11 @@ void FilterWidget::add()
 
 void FilterWidget::deleteDataFilter()
 {
-    QWidget* deleted_wgt = this->findChildren<QWidget*>("FilterLine").last();
+    auto wgts = this->findChildren<QWidget*>("FilterLine");
+    if( !wgts.size() )
+        return;
+
+    QWidget* deleted_wgt = wgts.last();
     this->layout()->removeWidget(deleted_wgt);
     deleted_wgt->deleteLater();
 }
@@ -140,6 +143,7 @@ void FilterWidget::clear()
         wgt->findChild<QComboBox*>("Operation")->setCurrentIndex(0);
         wgt->findChild<QLineEdit*>("InputValue")->clear();
     }
+    emit filteredData( {} );
 }
 
 QVector<Info> FilterWidget::parseFilterInfo()
@@ -165,13 +169,13 @@ bool FilterWidget::matchToken(const Info& info, const Token& token)
     QStringList vals;
     switch (f) {
     case Field::Labels:
-        vals.append( token.getLabels().keys() );
+        vals.append( token.getLabels().keys().join("") );
         break;
     case Field::Metric:
         vals.append( { token.getMetricName() } );
         break;
     case Field::Value:
-        vals.append( { ( token.getLabels().find("value") != token.getLabels().end() ) ? token.getLabels().find("value").value() : "" } );
+        vals.append( token.getMetricValue() );
         break;
     default:
         break;
@@ -179,7 +183,7 @@ bool FilterWidget::matchToken(const Info& info, const Token& token)
 
     const Type* field_type = type_to_field[f];
     foreach (const QString& str, vals) {
-        if( !field_type->compareValue( info.value, str, info.operation ) )
+        if( !field_type->compareValue( str, info.value, info.operation ) )
             return false;
     }
 
@@ -210,7 +214,7 @@ QVector<Token> FilterWidget::applyFilterToData(const QVector<Info>& filter_info)
 
 void FilterWidget::submit()
 {
-    filtered_data = applyFilterToData( parseFilterInfo() );
+    filtered_data = applyFilterToData(parseFilterInfo());
     emit filteredData(filtered_data);
 }
 

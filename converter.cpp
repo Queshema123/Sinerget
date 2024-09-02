@@ -1,6 +1,7 @@
 #include "converter.h"
 #include <QTextCodec>
 #include <QDebug>
+#include <QByteArray>
 
 QString Converter::prepareData(QFile& file)
 {
@@ -17,15 +18,27 @@ QString Converter::prepareData(QFile& file)
     return str;
 }
 
-void Converter::addLabels(Token& token, const QMultiMap<QString, QString>& labels)
+void Converter::addGroupLabel(Token& token)
 {
-    int idx{1};
-    for(auto it = labels.begin(); it != labels.end(); ++it)
+    QString metric_name = token.getMetricName();
+    qsizetype pos{ metric_name.indexOf('_') };
+    if( pos == -1)
+        return;
+
+    QString group_name{ metric_name.mid(0, pos) };
+    if( reserved_words.indexOf(group_name) != -1 )
+        group_name = metric_name.mid(pos+1);
+
+    token.addLabel("group", group_name);
+}
+
+void Converter::changeMetricValue(Token& token)
+{
+    auto it = token.getLabels().find("value");
+    if(it != token.getLabels().end() )
     {
-        QString key{ it.key() };
-        if(token.getLabels().contains(key))
-            key += QString::number(++idx);
-        token.addLabel(key, it.value() );
+        token.setMetricValue( it.value() );
+        token.deleteLabel( it.key() );
     }
 }
 
@@ -46,6 +59,8 @@ QVector<Token> Converter::parseNodeChilds(const QDomNode& node)
         else
         {
             Token t{ n.nodeName(), n.attributes() };
+            changeMetricValue(t);
+            addGroupLabel(t);
             t.addLabel( "parent", node.nodeName() );
             tokens.push_back(t);
         }
@@ -62,6 +77,8 @@ QVector<Token> Converter::parseDocument(const QDomDocument& doc)
     while( !node.isNull() )
     {
         Token tmp{ node.nodeName(), node.attributes() };
+        changeMetricValue(tmp);
+        addGroupLabel(tmp);
 
         if( node.hasChildNodes() )
         {
@@ -101,23 +118,17 @@ QVector<Token> Converter::parseFile(const QString &file_path)
 
 QString Converter::convertToPrometheus(const QVector<Token> &data)
 {
-    QString prometheus_data, value;
+    QString prometheus_data;
     for(const auto &token : data)
     {
         prometheus_data.append(token.getMetricName() + "{");
-        value = "0";
         const auto& labels = token.getLabels();
         for(auto[key, val] : labels.asKeyValueRange())
-        {
-            if(key == "value") // Если в метрике есть label с именем value, то сохраняем его, чтобы потом добавить в конец записи
-            {
-                value = val;
-                continue;
-            }
-
+        {            
             prometheus_data.append(key + " = \"" + val + "\" ");
         }
-        prometheus_data.append("}" + value + "\n");
+
+        prometheus_data.append("}" + token.getMetricValue() + "\n");
     }
     return prometheus_data;
 }

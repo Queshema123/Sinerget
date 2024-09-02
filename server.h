@@ -1,9 +1,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <QtHttpServer/QHttpServer>
+#include <QtHttpServer>
 #include <QString>
-#include <QThread>
 #include <QVector>
 #include <QFileSystemWatcher>
 #include <QFutureWatcher>
@@ -15,23 +14,23 @@ class Server : public QObject
 
     QHttpServer* server;
     quint16 port;
-    QString path_to_files, subdomain, last_parsed_file, file_separator;
+    QString path_to_files, subdomain, last_parsed_file, file_separator, responce;
     QStringList responces;
-    QVector<QVector<Token>> tokens_responces;
+    QVector<QVector<Token>> all_data;
+    QVector<Token> responce_data;
     QFileSystemWatcher* dir_watcher;
-    QFutureWatcher<QString> file_watcher;
+    QFutureWatcher<void> file_watcher;
     int parsed_files_count;
 
 public:
     Server(quint16 port, QObject* parent = nullptr);
-    QString createResponce(const QString &path_to_file);
+    void addResponce(const QString &path_to_file);
     void prepareResponce();
 
     void setPathToFiles(const QString &path);
     inline QString getPathToFiles() const { return path_to_files; }
-    inline QString getResponce() const { return (responces.size() > 0) ? responces.first() : ""; }
-    bool hasData() const { return tokens_responces.size() > 0; }
-    const QVector<Token>& getData() const { return tokens_responces.first(); }
+    inline QString getResponce() const { return responce; }
+    inline const QVector<Token>& getData() const { return responce_data; }
 };
 
 #endif // SERVER_H

@@ -21,17 +21,24 @@ ServerWidget::ServerWidget(quint16 port, QWidget *parent)
     main_layout->addWidget(txt_editor, 1);
 
     connect(this,           &ServerWidget::changePathToFiles, this, &ServerWidget::setPath);
-    connect(update_txt_btn, &QPushButton::clicked,            this, [this]()
-    {
-        if(!server->hasData())
-            return;
-        txt_editor->setText( server->getResponce() );
-        emit responceData( server->getData() );
-    } );
+    connect(update_txt_btn, &QPushButton::clicked,            this, &ServerWidget::updateViewData );
+}
+
+void ServerWidget::updateViewData()
+{
+    last_responce = server->getResponce();
+    txt_editor->setText( last_responce );
+    emit responceData( server->getData() );
 }
 
 void ServerWidget::setData(const QVector<Token>& tokens)
 {
+    if( !tokens.size() )
+    {
+        txt_editor->setText( last_responce );
+        return;
+    }
+
     txt_editor->setText( Converter::convertToPrometheus(tokens) );
 }
 

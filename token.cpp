@@ -1,11 +1,11 @@
 #include "token.h"
 #include <QDebug>
 
-Token::Token(const QString &metric_name, const QMap<QString, QString> &labels) : metric_name{metric_name}, labels{labels} { }
-Token::Token(const Token& other) : metric_name{other.metric_name}, labels{other.labels} { }
-Token::Token(Token&& other) : metric_name{other.metric_name}, labels{other.labels} { }
+Token::Token(const QString &metric_name, const QMap<QString, QString> &labels) : metric_name{metric_name}, labels{labels}, metric_value{"0"} { }
+Token::Token(const Token& other) : metric_name{other.metric_name}, labels{other.labels}, metric_value{ other.metric_value} { }
+Token::Token(Token&& other) : metric_name{other.metric_name}, labels{other.labels}, metric_value{other.metric_value} { }
 
-Token::Token(const QString &metric_name, const QDomNamedNodeMap &labels) : metric_name{metric_name}
+Token::Token(const QString &metric_name, const QDomNamedNodeMap &labels) : metric_name{metric_name}, metric_value{"0"}
 {
     addLabels(labels);
 }
