@@ -186,8 +186,10 @@ void FilterWidget::addFilterLine()
 
     fillFieldsBox(field_box);
 
-    connect(field_box, &QComboBox::currentTextChanged,  this, &FilterWidget::fillOperationsBox);
-    connect(input_value_wgt, &QLineEdit::returnPressed, this, &FilterWidget::updateFilterSection);
+    connect(field_box,       &QComboBox::currentTextChanged,  this, &FilterWidget::fillOperationsBox);
+    connect(field_box,       &QComboBox::currentTextChanged, input_value_wgt, &QLineEdit::clear);
+    connect(operation_box,   &QComboBox::currentTextChanged, this, [this](){  } );
+    connect(input_value_wgt, &QLineEdit::editingFinished, this, &FilterWidget::updateFilterSection);
 }
 
 void FilterWidget::deleteDataFilter()
@@ -210,7 +212,6 @@ void FilterWidget::deleteDataFilter()
     QWidget *deleted_wgt = wgts.last();
     this->layout()->removeWidget(deleted_wgt);
     deleted_wgt->deleteLater();
-
     isSubFilter = ( wgts.size() - 1 == 0) ? false : true;
 }
 
@@ -219,7 +220,7 @@ void FilterWidget::clear()
     QList<QWidget *> line_wgts = this->findChildren<QWidget *>("FilterLine");
     foreach (QWidget *wgt, line_wgts) {
         wgt->findChild<QComboBox *>("Field")->setCurrentIndex(0);
-        wgt->findChild<QComboBox *>("Operation")->setCurrentIndex(0);
+        wgt->findChild<QComboBox *>("Operation")->clear();
         wgt->findChild<QLineEdit *>("InputValue")->clear();
     }
 
