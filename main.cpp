@@ -1,5 +1,7 @@
-#include "mainwindow.h"
 #include <QApplication>
+#include "mainwindow.h"
+
+#include "type.h"
 
 // http://localhost:8081/metrics
 
@@ -8,7 +10,6 @@
 
 // Сделать в фильтре так, чтобы при выборе поля, например метрика, считывалась соответствующая метрика из labels и в QComboBox оставались только ее labels
 // Добавить кнопку и/или, которая вставляет QLabel("и") и после нее в новом виджете фильтра можно выбирать из всего списка
-//
 
 int main(int argc, char *argv[])
 {
