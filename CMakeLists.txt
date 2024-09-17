@@ -34,6 +34,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 	serverwidget.h serverwidget.cpp
 	filterwidget.h filterwidget.cpp
 	type.h type.cpp
+        treeitem.h treeitem.cpp
+        treemodel.h treemodel.cpp
 
 
     )

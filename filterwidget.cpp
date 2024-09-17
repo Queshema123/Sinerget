@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QLabel>
+#include <QSignalBlocker>
 
 const QMap<FilterWidget::Field, Type* > FilterWidget::type_to_field
     = {{FilterWidget::Field::Metric, new String},
@@ -82,24 +83,23 @@ QStringList FilterWidget::getOperationsTo(const QString &value)
     return {};
 }
 
-void FilterWidget::fillFieldsBox(QComboBox *box, const QMap<QString, QString>* labels)
+void FilterWidget::fillFieldsBox(QComboBox *box, const QMap<QString, QString>& labels, int idx)
 {
-    if( !labels )
-        labels = &this->labels;
-
-    foreach (const QString &name, labels->keys())
-        box->addItem(name, section_idx);
+    idx = (idx == -1) ? section_idx : idx;
+    QSignalBlocker block{ box };
+    foreach (const QString &name, labels.keys())
+        box->addItem(name, idx);
 
     foreach (const QString &name, field_views.values())
-        box->addItem(name, section_idx);
+        box->addItem(name, idx);
 }
 
 void FilterWidget::fillOperationsBox(const QString &field)
 {
     QComboBox *box = qobject_cast<QComboBox *>(sender())->parentWidget()->findChild<QComboBox *>(
         "Operation");
+    QSignalBlocker block{ box };
     box->clear();
-
     QStringList operations;
     if (getFieldByName(field) == Field::Labels)
         operations = getOperationsTo(field);
@@ -111,14 +111,17 @@ void FilterWidget::fillOperationsBox(const QString &field)
     }
 }
 
-QList<QWidget*> FilterWidget::extractLastFilterLines()
+QList<QWidget*> FilterWidget::extractFilterLines(int idx)
 {
     QList<QWidget*> wgts = this->findChildren<QWidget*>();
     QList<QWidget*>::const_iterator and_lbl_it = wgts.cend();
+    int i{ 0 };
     for(auto it = wgts.cbegin(); it != wgts.cend(); ++it)
     {
-        if( (*it)->objectName() == "AndLabel")
-            and_lbl_it = it;
+        if(i == idx)
+            break;
+        if( (*it)->objectName() != "AndLabel")
+            ++i;
     }
 
     if(and_lbl_it != wgts.end())
@@ -137,14 +140,46 @@ QList<QWidget*> FilterWidget::extractLastFilterLines()
     return wgts;
 }
 
-void FilterWidget::updateFilterSection()
+QMap<QString, QString> FilterWidget::getAllLabels( const QVector<Token>& tokens )
 {
-    auto wgts{ extractLastFilterLines() };
+    QMap<QString, QString> lbls;
+    foreach(const Token& token, tokens )
+        for(auto [key, value] : token.getLabels().asKeyValueRange())
+            lbls.insert(key, value);
+    return lbls;
+}
 
-    if(filtered_sections[section_idx].size() > 0)
-        filtered_sections[section_idx] = applyFilterToData( parseFilterInfo(wgts), filtered_sections[section_idx] );
+void FilterWidget::updateFilterSection(int idx)
+{
+    auto wgts{ extractFilterLines(idx) };
+
+    if(filtered_sections[idx].size() > 0)
+        filtered_sections[idx] = applyFilterToData( parseFilterInfo(wgts), filtered_sections[idx] );
     else
-        filtered_sections[section_idx] = applyFilterToData( parseFilterInfo(wgts), data );
+        filtered_sections[idx] = applyFilterToData( parseFilterInfo(wgts), data );
+}
+
+void FilterWidget::refilterInfo()
+{
+    QObject* f_line = sender()->parent();
+    if(f_line->findChild<QLineEdit*>("InputValue")->text().size() == 0 )
+        return;
+
+    int idx{ f_line->findChild<QComboBox*>("Field")->currentData().toInt() };
+    filtered_sections[idx].clear();
+    updateFilterSection(idx);
+    QObjectList wgts = sender()->parent()->parent()->children();
+    qsizetype i{ wgts.indexOf(f_line) + 1 };
+    for( ; i < wgts.size(); ++i )
+    {
+        if( wgts[i]->objectName() == "AndLabel" )
+            break;
+        if(wgts[i]->objectName() != "FilterLine")
+            continue;
+        QComboBox* box = wgts[i]->findChild<QComboBox*>("Field");
+        box->clear();
+        fillFieldsBox( box, getAllLabels( filtered_sections[idx] ) );
+    }
 }
 
 void FilterWidget::addSubFilter()
@@ -156,12 +191,7 @@ void FilterWidget::addSubFilter()
     fieldbox->clear();
     line->findChild<QComboBox*>("Operation")->clear();
 
-    QMap<QString, QString> lbls;
-    foreach(const Token& token, filtered_sections[section_idx] )
-        for(auto [key, value] : token.getLabels().asKeyValueRange())
-            lbls.insert(key, value);
-
-    fillFieldsBox( fieldbox, &lbls );
+    fillFieldsBox( fieldbox, getAllLabels(filtered_sections[section_idx]) );
 }
 
 void FilterWidget::addFilterLine()
@@ -184,12 +214,12 @@ void FilterWidget::addFilterLine()
     filter_line_layout->addWidget(operation_box);
     filter_line_layout->addWidget(input_value_wgt);
 
-    fillFieldsBox(field_box);
+    fillFieldsBox(field_box, this->labels);
 
-    connect(field_box,       &QComboBox::currentTextChanged,  this, &FilterWidget::fillOperationsBox);
+    connect(field_box,       &QComboBox::currentTextChanged, this,            &FilterWidget::fillOperationsBox);
     connect(field_box,       &QComboBox::currentTextChanged, input_value_wgt, &QLineEdit::clear);
-    connect(operation_box,   &QComboBox::currentTextChanged, this, [this](){  } );
-    connect(input_value_wgt, &QLineEdit::editingFinished, this, &FilterWidget::updateFilterSection);
+    connect(operation_box,   &QComboBox::currentTextChanged, this,            &FilterWidget::refilterInfo);
+    connect(input_value_wgt, &QLineEdit::editingFinished,    this,            &FilterWidget::refilterInfo);
 }
 
 void FilterWidget::deleteDataFilter()

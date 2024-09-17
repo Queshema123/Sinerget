@@ -1,6 +1,7 @@
 #include <QDomNamedNodeMap>
 #include <QMultiMap>
 #include <QString>
+#include <QMetaType>
 
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
@@ -16,6 +17,7 @@ public:
     Token(const Token &other);
     Token(Token &&other);
     Token &operator=(const Token &other);
+    ~Token() = default;
 
     friend bool operator==(const Token &left, const Token &right);
     friend bool operator!=(const Token &left, const Token &right);
@@ -33,5 +35,7 @@ public:
     inline void setMetricValue(const QString &value) { metric_value = value; }
     void addLabel(const QString &name, const QString &value);
 };
+
+Q_DECLARE_METATYPE(Token)
 
 #endif // _TOKEN_H_

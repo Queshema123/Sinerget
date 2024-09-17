@@ -3,6 +3,7 @@
 
 #include <QTextEdit>
 #include <QWidget>
+#include <QTimer>
 #include "server.h"
 
 class ServerWidget : public QWidget
@@ -13,7 +14,7 @@ class ServerWidget : public QWidget
     quint16 port;
     QTextEdit *txt_editor;
     QString last_responce;
-
+    QTimer* timer;
 public:
     explicit ServerWidget(quint16 port, QWidget *parent = nullptr);
     inline QString getResponce() const { return server->getResponce(); }
@@ -21,6 +22,7 @@ public slots:
     void setPath();
     void setData(const QVector<Token> &tokens);
     void updateViewData();
+    void enableAutoUpdate(bool enable);
 signals:
     void changePathToFiles();
     void responceData(const QVector<Token> &tokens);

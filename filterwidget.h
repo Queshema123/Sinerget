@@ -41,7 +41,7 @@ class FilterWidget : public QDialog
     Q_OBJECT
 
 protected:
-    void fillFieldsBox(QComboBox *box, const QMap<QString, QString>* labels = nullptr );
+    void fillFieldsBox(QComboBox *box, const QMap<QString, QString>& labels, int idx = -1 );
     void fillOperationsBox(const QString &field);
     void addBtns(QVBoxLayout *main_layout);
     void addSubFilter();
@@ -50,14 +50,15 @@ protected:
     void submit();
     void clear();
     void addOperationAND();
-    void updateFilterSection();
+    void updateFilterSection(int idx);
 public:
     explicit FilterWidget(QWidget *parent = nullptr);
 
     QPushButton* addBtn(const QString& view, const QString& obj_name, QLayout* layout);
-    QList<QWidget*> extractLastFilterLines();
+    QList<QWidget*> extractFilterLines(int idx);
     QVector<Info> parseFilterInfo(const QList<QWidget*>& wgts = {});
     QVector<Token> applyFilterToData(const QVector<Info> &filter_info, const QVector<Token>& data);
+    QMap<QString, QString> getAllLabels( const QVector<Token>& tokens );
     bool matchToken(const Info &info, const Token &token);
 
     enum class Field { Metric, Value, Labels };
@@ -66,9 +67,10 @@ public:
     static QStringList getOperationsTo(const QString &value);
 public slots:
     void setData(const QVector<Token> &tokens);
+private slots:
+    void refilterInfo();
 signals:
     void filteredData(const QVector<Token> &data);
-
 private:
     QVector<Token> data;
     QMap<QString, QString> labels;
