@@ -39,9 +39,9 @@ QMenuBar *MainWindow::createMenuBar()
     QAction *filter_act = new QAction("Filter data");
     QAction *exit_act = new QAction("exit");
 
-    connect(exit_act, &QAction::triggered, this, &MainWindow::close);
+    connect(exit_act,          &QAction::triggered, this,       &MainWindow::close);
     connect(path_to_files_act, &QAction::triggered, server_wgt, &ServerWidget::changePathToFiles);
-    connect(filter_act, &QAction::triggered, filter_wgt, &FilterWidget::show);
+    connect(filter_act,        &QAction::triggered, filter_wgt, &FilterWidget::show);
 
     connect(filter_wgt, &FilterWidget::filteredData, server_wgt, &ServerWidget::setData);
     connect(server_wgt, &ServerWidget::responceData, filter_wgt, &FilterWidget::setData);

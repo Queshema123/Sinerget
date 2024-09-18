@@ -1,10 +1,14 @@
 #ifndef SERVERWIDGET_H
 #define SERVERWIDGET_H
 
+#include "server.h"
+
 #include <QTextEdit>
 #include <QWidget>
 #include <QTimer>
-#include "server.h"
+#include <QTreeView>
+#include <QStandardItemModel>
+
 
 class ServerWidget : public QWidget
 {
@@ -12,12 +16,14 @@ class ServerWidget : public QWidget
 
     Server *server;
     quint16 port;
-    QTextEdit *txt_editor;
     QString last_responce;
     QTimer* timer;
+    QStandardItemModel* model;
+    QTreeView* view;
 public:
     explicit ServerWidget(quint16 port, QWidget *parent = nullptr);
     inline QString getResponce() const { return server->getResponce(); }
+    void setupModelAndView(QLayout* main_layout);
 public slots:
     void setPath();
     void setData(const QVector<Token> &tokens);

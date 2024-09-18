@@ -1,16 +1,17 @@
 #include "serverwidget.h"
+#include "converter.h"
+
 #include <QFileDialog>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QCheckBox>
 #include <QLabel>
-#include "converter.h"
+
 
 ServerWidget::ServerWidget(quint16 port, QWidget *parent)
     : QWidget{parent}
     , server{nullptr}
     , port{port}
-    , txt_editor{new QTextEdit}
 {
     server = new Server(port, this);
     timer = new QTimer(this);
@@ -32,9 +33,7 @@ ServerWidget::ServerWidget(quint16 port, QWidget *parent)
 
     main_layout->addLayout(update_layout);
 
-    txt_editor->setParent(this);
-    txt_editor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    main_layout->addWidget(txt_editor, 1);
+    setupModelAndView(main_layout);
 
     connect(timer,          &QTimer::timeout,                 this, &ServerWidget::updateViewData);
     connect(update_box,     &QCheckBox::clicked,              this, &ServerWidget::enableAutoUpdate);
@@ -42,21 +41,42 @@ ServerWidget::ServerWidget(quint16 port, QWidget *parent)
     connect(update_txt_btn, &QPushButton::clicked,            this, &ServerWidget::updateViewData);
 }
 
+void ServerWidget::setupModelAndView(QLayout* main_layout)
+{
+    model = new QStandardItemModel(this);
+    view = new QTreeView;
+    view->setModel( model );
+    main_layout->addWidget( view );
+    view->show();
+}
+
 void ServerWidget::updateViewData()
 {
     last_responce = server->getResponce();
-    txt_editor->setText(last_responce);
+    setData( server->getData() );
     emit responceData(server->getData());
 }
 
 void ServerWidget::setData(const QVector<Token> &tokens)
 {
-    if (!tokens.size()) {
-        txt_editor->setText(last_responce);
-        return;
-    }
+    model->setRowCount(tokens.size());
+    model->setColumnCount(2);
+    int row{0};
+    foreach (const Token& token, tokens) {
+        QStandardItem *root_left_item = new QStandardItem(token.getMetricName());
+        QStandardItem *root_right_item = new QStandardItem(token.getMetricValue());
 
-    txt_editor->setText(Converter::convertToPrometheus(tokens));
+        model->setItem(row, 0, root_left_item);
+        model->setItem(row, 1, root_right_item);
+
+        for(auto [key,value] : token.getLabels().asKeyValueRange())
+        {
+            QStandardItem *left_item = new QStandardItem(key);
+            QStandardItem *right_item = new QStandardItem(value);
+            root_left_item->appendColumn( {left_item, right_item} );
+        }
+        ++row;
+    }
 }
 
 void ServerWidget::setPath()
