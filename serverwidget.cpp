@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QCheckBox>
 #include <QLabel>
+#include <QTreeView>
 
 
 ServerWidget::ServerWidget(quint16 port, QWidget *parent)
@@ -19,7 +20,6 @@ ServerWidget::ServerWidget(quint16 port, QWidget *parent)
 
     QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-    main_layout->setDirection(QBoxLayout::Direction::TopToBottom);
     QPushButton *update_txt_btn = new QPushButton("Обновить");
     update_txt_btn->setObjectName("UpdateBtn");
     update_txt_btn->setMaximumWidth(100);
@@ -44,7 +44,7 @@ ServerWidget::ServerWidget(quint16 port, QWidget *parent)
 void ServerWidget::setupModelAndView(QLayout* main_layout)
 {
     model = new QStandardItemModel(this);
-    view = new QTreeView;
+    view = new QTreeView();
     view->setModel( model );
     main_layout->addWidget( view );
     view->show();
@@ -91,4 +91,10 @@ void ServerWidget::enableAutoUpdate(bool enable)
         timer->start();
     else
         timer->stop();
+}
+
+void ServerWidget::changeDataView()
+{
+    // Добавить окно с выбором представления данных
+    // Добавить смену view
 }

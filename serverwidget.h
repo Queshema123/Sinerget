@@ -3,11 +3,10 @@
 
 #include "server.h"
 
-#include <QTextEdit>
 #include <QWidget>
 #include <QTimer>
-#include <QTreeView>
 #include <QStandardItemModel>
+#include <QAbstractItemView>
 
 
 class ServerWidget : public QWidget
@@ -19,7 +18,7 @@ class ServerWidget : public QWidget
     QString last_responce;
     QTimer* timer;
     QStandardItemModel* model;
-    QTreeView* view;
+    QAbstractItemView* view;
 public:
     explicit ServerWidget(quint16 port, QWidget *parent = nullptr);
     inline QString getResponce() const { return server->getResponce(); }
@@ -29,6 +28,7 @@ public slots:
     void setData(const QVector<Token> &tokens);
     void updateViewData();
     void enableAutoUpdate(bool enable);
+    void changeDataView();
 signals:
     void changePathToFiles();
     void responceData(const QVector<Token> &tokens);
