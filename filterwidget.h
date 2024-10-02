@@ -45,12 +45,13 @@ protected:
     void fillOperationsBox(const QString &field);
     void addBtns(QVBoxLayout *main_layout);
     void addSubFilter();
-    void addFilterLine();
     void deleteDataFilter();
     void submit();
     void clear();
     void addOperationAND();
     void updateFilterSection(int idx);
+    void saveFilterTemplate();
+    void clearLayout();
 public:
     explicit FilterWidget(QWidget *parent = nullptr);
 
@@ -60,6 +61,10 @@ public:
     QVector<Token> applyFilterToData(const QVector<Info> &filter_info, const QVector<Token>& data);
     QMap<QString, QString> getAllLabels( const QVector<Token>& tokens );
     bool matchToken(const Info &info, const Token &token);
+    void copyBoxData(QComboBox* original, QComboBox* copy);
+    QList<QWidget*> extractFilter();
+    QWidget* copyLineWidget(QWidget* line);
+    QWidget* addFilterLine(bool isAddToMainLayout = true);
 
     enum class Field { Metric, Value, Labels };
     static QString getFieldView(Field field);
@@ -67,17 +72,20 @@ public:
     static QStringList getOperationsTo(const QString &value);
 public slots:
     void setData(const QVector<Token> &tokens);
+    void applyFilterTemplate(const QString& name);
 private slots:
     void refilterInfo();
 signals:
     void filteredData(const QVector<Token> &data);
-private:
+    void filterTemplate(const QString& name);
+protected:
     QVector<Token> data;
     QMap<QString, QString> labels;
+    QMap<QString, QList<QWidget*>> filter_templates;
 
     QVector<QVector<Token>> filtered_sections;
     int section_idx;
-
+private:
     bool isSubFilter;
 
     static const QMap<Field, Type* > type_to_field;

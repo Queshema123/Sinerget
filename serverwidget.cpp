@@ -61,6 +61,9 @@ void ServerWidget::setData(const QVector<Token> &tokens)
 {
     model->setRowCount(tokens.size());
     model->setColumnCount(2);
+    model->setHeaderData(0, Qt::Horizontal, "Metric");
+    model->setHeaderData(1, Qt::Horizontal, "Value");
+
     int row{0};
     foreach (const Token& token, tokens) {
         QStandardItem *root_left_item = new QStandardItem(token.getMetricName());
@@ -73,7 +76,7 @@ void ServerWidget::setData(const QVector<Token> &tokens)
         {
             QStandardItem *left_item = new QStandardItem(key);
             QStandardItem *right_item = new QStandardItem(value);
-            root_left_item->appendColumn( {left_item, right_item} );
+            root_left_item->appendRow( {left_item, right_item} );
         }
         ++row;
     }
@@ -97,4 +100,12 @@ void ServerWidget::changeDataView()
 {
     // Добавить окно с выбором представления данных
     // Добавить смену view
+    // Добавить окошко с надписью "Здесь выбор отображения"
+}
+
+void ServerWidget::selectRow(qsizetype row)
+{
+    QModelIndex idx{ model->index(row, 0) };
+    if( idx.isValid() )
+        view->selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }

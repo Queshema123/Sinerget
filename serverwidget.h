@@ -29,6 +29,7 @@ public slots:
     void updateViewData();
     void enableAutoUpdate(bool enable);
     void changeDataView();
+    void selectRow(qsizetype row);
 signals:
     void changePathToFiles();
     void responceData(const QVector<Token> &tokens);

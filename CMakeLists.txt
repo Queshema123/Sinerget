@@ -34,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 	serverwidget.h serverwidget.cpp
 	filterwidget.h filterwidget.cpp
 	type.h type.cpp
+        searchwidget.h searchwidget.cpp
 
 
 

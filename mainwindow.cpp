@@ -38,19 +38,26 @@ QMenuBar *MainWindow::createMenuBar()
     QAction *path_to_files_act = new QAction("Change path");
     QAction *filter_act = new QAction("Filter data");
     QAction *view_act = new QAction("Change view");
+    QAction* search_act = new QAction("Search");
     QAction *exit_act = new QAction("exit");
 
     connect(exit_act,          &QAction::triggered, this,       &MainWindow::close);
     connect(path_to_files_act, &QAction::triggered, server_wgt, &ServerWidget::changePathToFiles);
     connect(filter_act,        &QAction::triggered, filter_wgt, &FilterWidget::show);
+    connect(search_act,        &QAction::triggered, searched_wgt, &SearchWidget::show);
     connect(view_act,          &QAction::triggered, server_wgt, &ServerWidget::changeDataView);
 
     connect(filter_wgt, &FilterWidget::filteredData, server_wgt, &ServerWidget::setData);
     connect(server_wgt, &ServerWidget::responceData, filter_wgt, &FilterWidget::setData);
+    // Search
+    connect(filter_wgt,   &FilterWidget::filteredData,         searched_wgt, &SearchWidget::setData);
+    connect(server_wgt,   &ServerWidget::responceData,         searched_wgt, &SearchWidget::setData);
+    connect(searched_wgt, &SearchWidget::searchedElementIndex, server_wgt,   &ServerWidget::selectRow);
 
     data_menu->addAction(filter_act);
-    data_menu->addAction(path_to_files_act);
+    data_menu->addAction(search_act);
     data_menu->addAction(view_act);
+    data_menu->addAction(path_to_files_act);
 
     menu_bar->addMenu(data_menu);
     menu_bar->addAction(exit_act);
@@ -62,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , server_wgt{nullptr}
     , filter_wgt{nullptr}
+    , searched_wgt{nullptr}
 {
     QWidget *main_wgt = new QWidget;
     main_wgt->setObjectName("MainWidget");
@@ -70,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     server_wgt = new ServerWidget(8081, this);
     filter_wgt = new FilterWidget(this);
+    searched_wgt = new SearchWidget(this);
 
     changeMenuBar(createMenuBar());
     changeTools(createToolsWidgets());
