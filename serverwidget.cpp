@@ -7,6 +7,7 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QTreeView>
+#include <QMessageBox>
 
 
 ServerWidget::ServerWidget(quint16 port, QWidget *parent)
@@ -52,6 +53,7 @@ void ServerWidget::setupModelAndView(QLayout* main_layout)
 
 void ServerWidget::updateViewData()
 {
+    emit status("Обновление отображения...");
     last_responce = server->getResponce();
     setData( server->getData() );
     emit responceData(server->getData());
@@ -80,6 +82,7 @@ void ServerWidget::setData(const QVector<Token> &tokens)
         }
         ++row;
     }
+    emit status("Данные обновлены");
 }
 
 void ServerWidget::setPath()
@@ -101,6 +104,7 @@ void ServerWidget::changeDataView()
     // Добавить окно с выбором представления данных
     // Добавить смену view
     // Добавить окошко с надписью "Здесь выбор отображения"
+    QMessageBox::information(this, "Смена отображения", "");
 }
 
 void ServerWidget::selectRow(qsizetype row)

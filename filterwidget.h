@@ -78,6 +78,8 @@ private slots:
 signals:
     void filteredData(const QVector<Token> &data);
     void filterTemplate(const QString& name);
+    void status(const QString& status);
+    void blockAddDeleteOperation(bool block);
 protected:
     QVector<Token> data;
     QMap<QString, QString> labels;

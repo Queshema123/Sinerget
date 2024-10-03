@@ -31,20 +31,24 @@ QPushButton* FilterWidget::addBtn(const QString& view, const QString& obj_name, 
 void FilterWidget::addBtns(QVBoxLayout *main_layout)
 {
     QWidget *btns_wgt = new QWidget;
-    QHBoxLayout *btns_layout = new QHBoxLayout(btns_wgt);
+    QVBoxLayout *btns_layout = new QVBoxLayout(btns_wgt);
+    QHBoxLayout *f_btns_line = new QHBoxLayout;
+    QHBoxLayout *s_btns_line = new QHBoxLayout;
+    btns_layout->addLayout(f_btns_line);
+    btns_layout->addLayout(s_btns_line);
     main_layout->addWidget(btns_wgt, 0, Qt::AlignTop);
 
-    QPushButton *submit_btn = addBtn("Submit", "SubmitButton", btns_layout);
-    QPushButton *add_btn    = addBtn("Add",    "AddButton",    btns_layout);
-    QPushButton *delete_btn = addBtn("Delete", "DeleteButton", btns_layout);
-    QPushButton *clear_btn  = addBtn("Clear",  "ClearButton",  btns_layout);
-    QPushButton *and_btn    = addBtn("AND",    "ANDButton",    btns_layout);
-    QPushButton *save_btn   = addBtn("Save",   "SaveButton",   btns_layout);
+    QPushButton *submit_btn = addBtn("Фильтровать", "SubmitButton", f_btns_line);
+    QPushButton *add_btn    = addBtn("Добавить",    "AddButton",    f_btns_line);
+    QPushButton *delete_btn = addBtn("Удалить", "DeleteButton", f_btns_line);
+    QPushButton *clear_btn  = addBtn("Очистить",  "ClearButton",  f_btns_line);
+    QPushButton *and_btn    = addBtn("И",    "ANDButton",    s_btns_line);
+    QPushButton *save_btn   = addBtn("Сохранить",   "SaveButton",   s_btns_line);
 
     QComboBox *templates_box = new QComboBox;
     templates_box->setObjectName("FilterTemplatesBox");
-    templates_box->addItem("Empty");
-    btns_layout->addWidget(templates_box);
+    templates_box->addItem("Пусто");
+    s_btns_line->addWidget(templates_box);
 
     connect(submit_btn, &QPushButton::clicked, this, &FilterWidget::submit);
     connect(delete_btn, &QPushButton::clicked, this, &FilterWidget::deleteDataFilter);
@@ -62,6 +66,10 @@ void FilterWidget::addBtns(QVBoxLayout *main_layout)
     connect(save_btn,   &QPushButton::clicked, this, &FilterWidget::saveFilterTemplate);
     connect(this, &FilterWidget::filterTemplate, templates_box, [templates_box](const QString& n){ templates_box->addItem(n); });
     connect(templates_box, &QComboBox::currentTextChanged, this, &FilterWidget::applyFilterTemplate);
+
+    connect(this, &FilterWidget::blockAddDeleteOperation, delete_btn, &QPushButton::setDisabled );
+    connect(this, &FilterWidget::blockAddDeleteOperation, add_btn,    &QPushButton::setDisabled );
+    connect(this, &FilterWidget::blockAddDeleteOperation, and_btn,    &QPushButton::setDisabled );
 }
 
 FilterWidget::FilterWidget(QWidget *parent)
@@ -358,12 +366,14 @@ QVector<Token> FilterWidget::applyFilterToData(const QVector<Info> &filter_info,
 
 void FilterWidget::submit()
 {
+    emit status("Применение фильтра...");
     QVector<Token> filtered_data;
     foreach (const QVector<Token> tokens, filtered_sections) {
         filtered_data.append( tokens.cbegin(), tokens.cend() );
     }
 
     emit filteredData(filtered_data);
+    emit status("Фильтр применён");
 }
 
 void FilterWidget::setData(const QVector<Token> &tokens)
@@ -377,7 +387,7 @@ void FilterWidget::setData(const QVector<Token> &tokens)
 void FilterWidget::addOperationAND()
 {
     QVBoxLayout *main_layout = qobject_cast<QVBoxLayout *>(this->layout());
-    QLabel* lbl = new QLabel("AND");
+    QLabel* lbl = new QLabel("И");
     lbl->setObjectName("AndLabel");
     main_layout->addWidget( lbl );
     ++section_idx;
@@ -410,7 +420,7 @@ void FilterWidget::saveFilterTemplate()
     {
         if(wgt->objectName() != "FilterLine")
         {
-            QLabel* lbl = new QLabel("AND");
+            QLabel* lbl = new QLabel("И");
             lbl->setObjectName("AndLabel");
             wgts.append( lbl );
             continue;
@@ -418,9 +428,9 @@ void FilterWidget::saveFilterTemplate()
         QWidget* line = copyLineWidget(wgt);
         wgts.append( line );
     }
-
-    filter_templates.insert( QInputDialog::getText(this, "Template name", "Input name"),  std::move(wgts) );
-    emit filterTemplate( filter_templates.lastKey() );
+    QString name{ QInputDialog::getText(this, "Имя шаблона", "Введите имя шаблона") };
+    filter_templates.insert(name,  std::move(wgts) );
+    emit filterTemplate( name );
 }
 
 void FilterWidget::clearLayout()
@@ -432,20 +442,30 @@ void FilterWidget::clearLayout()
     QList<QWidget*> wgts = this->findChildren<QWidget*>();
     foreach(QWidget* wgt, wgts)
     {
-        if(wgt->objectName() != "FilterLine" || wgt->objectName() != "AndLabel")
+        if(wgt->objectName() != "FilterLine" && wgt->objectName() != "AndLabel")
             continue;
         this->layout()->removeWidget(wgt);
-        wgt->deleteLater();
     }
 }
 
 void FilterWidget::applyFilterTemplate(const QString& name)
-{
+{ // При смене фильтра не обновляются данные
     this->clearLayout();
+    if(name == "Пусто")
+    {
+        emit blockAddDeleteOperation(false);
+        return;
+    }
+    emit blockAddDeleteOperation(true);
     QWidgetList wgts = filter_templates[name];
     QVBoxLayout *main_layout = qobject_cast<QVBoxLayout *>(this->layout());
+    int and_lbls_cnt{0};
     foreach (QWidget* wgt, wgts)
+    {
         main_layout->addWidget(wgt);
-
-    updateFilterSection(0);
+        if(wgt->objectName() == "AndLabel")
+            ++and_lbls_cnt;
+    }
+    for(int i{0}; i <= and_lbls_cnt; ++i)
+        updateFilterSection(i);
 }

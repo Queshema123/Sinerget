@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Styles/Combinear.qss</file>
+        <file>Styles/Medize.qss</file>
+        <file>Styles/Integrid.qss</file>
+    </qresource>
+</RCC>

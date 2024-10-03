@@ -33,6 +33,7 @@ public slots:
 signals:
     void changePathToFiles();
     void responceData(const QVector<Token> &tokens);
+    void status(const QString& status);
 };
 
 #endif // SERVERWIDGET_H

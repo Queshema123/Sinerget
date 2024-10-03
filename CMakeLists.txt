@@ -35,6 +35,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 	filterwidget.h filterwidget.cpp
 	type.h type.cpp
         searchwidget.h searchwidget.cpp
+        themes.qrc
 
 
 
