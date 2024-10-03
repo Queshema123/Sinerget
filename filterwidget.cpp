@@ -123,15 +123,18 @@ void FilterWidget::fillOperationsBox(const QString &field)
 
 QList<QWidget*> FilterWidget::extractFilterLines(int idx)
 {
-    QList<QWidget*> wgts = this->findChildren<QWidget*>();
+    QList<QWidget*> wgts = extractFilter();
     QList<QWidget*>::const_iterator and_lbl_it = wgts.cend();
     int i{ 0 };
-    for(auto it = wgts.cbegin(); it != wgts.cend(); ++it)
+    for(int j{0}; j < wgts.size(); ++j)
     {
         if(i == idx)
             break;
-        if( (*it)->objectName() != "AndLabel")
+        if( wgts[j]->objectName() == "AndLabel")
+        {
+            and_lbl_it = wgts.cbegin() + j;
             ++i;
+        }
     }
 
     if(and_lbl_it != wgts.end())
@@ -178,7 +181,7 @@ void FilterWidget::updateFilterSection(int idx)
 {
     auto wgts{ extractFilterLines(idx) };
 
-    if(filtered_sections[idx].size() > 1)
+    if(filtered_sections[idx].size() > 0)
         filtered_sections[idx] = applyFilterToData( parseFilterInfo(wgts), filtered_sections[idx] );
     else
         filtered_sections[idx] = applyFilterToData( parseFilterInfo(wgts), data );
@@ -280,9 +283,8 @@ void FilterWidget::clear()
         wgt->findChild<QLineEdit *>("InputValue")->clear();
     }
 
-    filtered_sections.resize(1);
-    section_idx = 0;
-    filtered_sections[section_idx].clear();
+    for(int i = 0; i < filtered_sections.size(); ++i)
+        filtered_sections[i].clear();
 
     emit filteredData(data);
 }
@@ -335,8 +337,7 @@ bool FilterWidget::matchToken(const Info &info, const Token &token)
 }
 
 QVector<Token> FilterWidget::applyFilterToData(const QVector<Info> &filter_info, const QVector<Token>& data)
-{ // Доработать функцию, не учитывает AND из-за чего некорректно работает
-    // Добавить в конейнер объект Info с операцией "AND" и добавить эту обработку в функцию ниже
+{
     QVector<Token> filtered_tokens;
 
     foreach (const Token &token, data) {
