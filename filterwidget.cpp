@@ -40,9 +40,9 @@ void FilterWidget::addBtns(QVBoxLayout *main_layout)
 
     QPushButton *submit_btn = addBtn("Фильтровать", "SubmitButton", f_btns_line);
     QPushButton *add_btn    = addBtn("Добавить",    "AddButton",    f_btns_line);
-    QPushButton *delete_btn = addBtn("Удалить", "DeleteButton", f_btns_line);
-    QPushButton *clear_btn  = addBtn("Очистить",  "ClearButton",  f_btns_line);
-    QPushButton *and_btn    = addBtn("И",    "ANDButton",    s_btns_line);
+    QPushButton *delete_btn = addBtn("Удалить",     "DeleteButton", f_btns_line);
+    QPushButton *clear_btn  = addBtn("Очистить",    "ClearButton",  f_btns_line);
+    QPushButton *and_btn    = addBtn("И",           "ANDButton",    s_btns_line);
     QPushButton *save_btn   = addBtn("Сохранить",   "SaveButton",   s_btns_line);
 
     QComboBox *templates_box = new QComboBox;
@@ -66,10 +66,6 @@ void FilterWidget::addBtns(QVBoxLayout *main_layout)
     connect(save_btn,   &QPushButton::clicked, this, &FilterWidget::saveFilterTemplate);
     connect(this, &FilterWidget::filterTemplate, templates_box, [templates_box](const QString& n){ templates_box->addItem(n); });
     connect(templates_box, &QComboBox::currentTextChanged, this, &FilterWidget::applyFilterTemplate);
-
-    connect(this, &FilterWidget::blockAddDeleteOperation, delete_btn, &QPushButton::setDisabled );
-    connect(this, &FilterWidget::blockAddDeleteOperation, add_btn,    &QPushButton::setDisabled );
-    connect(this, &FilterWidget::blockAddDeleteOperation, and_btn,    &QPushButton::setDisabled );
 }
 
 FilterWidget::FilterWidget(QWidget *parent)
@@ -104,29 +100,32 @@ QStringList FilterWidget::getOperationsTo(const QString &value)
 void FilterWidget::fillFieldsBox(QComboBox *box, const QMap<QString, QString>& labels, int idx)
 {
     idx = (idx == -1) ? section_idx : idx;
-    QSignalBlocker block{ box };
     foreach (const QString &name, labels.keys())
         box->addItem(name, idx);
 
     foreach (const QString &name, field_views.values())
         box->addItem(name, idx);
+    fillOperationsBox( box->currentText() );
 }
 
 void FilterWidget::fillOperationsBox(const QString &field)
 {
-    QComboBox *box = qobject_cast<QComboBox *>(sender())->parentWidget()->findChild<QComboBox *>(
-        "Operation");
-    QSignalBlocker block{ box };
+    QComboBox* box = qobject_cast<QComboBox *>(sender());
+    if( box )
+        box = box->parentWidget()->findChild<QComboBox*>("Operation");
+    else
+        box = this->findChildren<QComboBox*>("Operation").last();
+
     box->clear();
+
     QStringList operations;
     if (getFieldByName(field) == Field::Labels)
         operations = getOperationsTo(field);
     else
         operations = type_to_field.value(getFieldByName(field))->getOperations();
 
-    foreach (const QString &operation, operations) {
+    foreach (const QString &operation, operations)
         box->addItem(operation);
-    }
 }
 
 QList<QWidget*> FilterWidget::extractFilterLines(int idx)
@@ -218,7 +217,7 @@ void FilterWidget::refilterInfo()
     }
 }
 
-void FilterWidget::addSubFilter()
+QWidget* FilterWidget::addSubFilter()
 {
     QWidget* line = addFilterLine();
     auto fieldbox = line->findChild<QComboBox*>("Field");
@@ -226,6 +225,7 @@ void FilterWidget::addSubFilter()
     line->findChild<QComboBox*>("Operation")->clear();
 
     fillFieldsBox( fieldbox, getAllLabels(filtered_sections[section_idx]) );
+    return line;
 }
 
 QWidget* FilterWidget::addFilterLine(bool isAddToMainLayout)
@@ -251,10 +251,9 @@ QWidget* FilterWidget::addFilterLine(bool isAddToMainLayout)
 
     fillFieldsBox(field_box, this->labels);
 
-    connect(field_box,       &QComboBox::currentTextChanged, this,            &FilterWidget::fillOperationsBox);
-    connect(field_box,       &QComboBox::currentTextChanged, input_value_wgt, &QLineEdit::clear);
-    connect(operation_box,   &QComboBox::currentTextChanged, this,            &FilterWidget::refilterInfo);
-    connect(input_value_wgt, &QLineEdit::editingFinished,    this,            &FilterWidget::refilterInfo);
+    connect(field_box,       &QComboBox::currentTextChanged, this,             &FilterWidget::fillOperationsBox);
+    connect(operation_box,   &QComboBox::currentTextChanged,  this,            &FilterWidget::refilterInfo);
+    connect(input_value_wgt, &QLineEdit::editingFinished,     this,            &FilterWidget::refilterInfo);
 
     return filter_line_wgt;
 }
@@ -308,6 +307,12 @@ QVector<Info> FilterWidget::parseFilterInfo(const QList<QWidget*> &wgts)
     QVector<Info> info;
     foreach (QWidget *wgt, line_wgts) {
         Info inf;
+        if( wgt->objectName() == "AndLabel" )
+        {
+            inf.operation = "AND";
+            info.push_back( std::move(inf) );
+            continue;
+        }
         inf.field = wgt->findChild<QComboBox *>("Field")->currentText();
         inf.operation = wgt->findChild<QComboBox *>("Operation")->currentText();
         inf.value = wgt->findChild<QLineEdit *>("InputValue")->text();
@@ -415,21 +420,9 @@ QWidget* FilterWidget::copyLineWidget(QWidget* line)
 void FilterWidget::saveFilterTemplate()
 {
     QList<QWidget*> wgts_pointers = extractFilter();
-    QList<QWidget*> wgts;
-    foreach (QWidget* wgt, wgts_pointers)
-    {
-        if(wgt->objectName() != "FilterLine")
-        {
-            QLabel* lbl = new QLabel("И");
-            lbl->setObjectName("AndLabel");
-            wgts.append( lbl );
-            continue;
-        }
-        QWidget* line = copyLineWidget(wgt);
-        wgts.append( line );
-    }
+    QVector<Info> info{ parseFilterInfo(wgts_pointers) };
     QString name{ QInputDialog::getText(this, "Имя шаблона", "Введите имя шаблона") };
-    filter_templates.insert(name,  std::move(wgts) );
+    filter_templates.insert(name,  std::move(info) );
     emit filterTemplate( name );
 }
 
@@ -445,26 +438,34 @@ void FilterWidget::clearLayout()
         if(wgt->objectName() != "FilterLine" && wgt->objectName() != "AndLabel")
             continue;
         this->layout()->removeWidget(wgt);
+        wgt->deleteLater();
     }
+    emit toClear(true);
 }
 
 void FilterWidget::applyFilterTemplate(const QString& name)
-{ // При смене фильтра не обновляются данные
+{
     this->clearLayout();
     if(name == "Пусто")
-    {
-        emit blockAddDeleteOperation(false);
         return;
-    }
-    emit blockAddDeleteOperation(true);
-    QWidgetList wgts = filter_templates[name];
-    QVBoxLayout *main_layout = qobject_cast<QVBoxLayout *>(this->layout());
+
+    QVector<Info> info = filter_templates[name];
     int and_lbls_cnt{0};
-    foreach (QWidget* wgt, wgts)
+    QPushButton* add_btn = this->findChild<QPushButton*>("AddButton");
+    QPushButton* and_btn = this->findChild<QPushButton*>("ANDButton");
+    foreach (const Info& inf, info)
     {
-        main_layout->addWidget(wgt);
-        if(wgt->objectName() == "AndLabel")
+        if(inf.operation == "AND")
+        {
+            and_btn->click();
             ++and_lbls_cnt;
+            continue;
+        }
+        add_btn->click();
+        QWidget* wgt = this->findChildren<QWidget*>("FilterLine").takeLast();
+        wgt->findChild<QComboBox*>("Field")->setCurrentText( inf.field );
+        wgt->findChild<QComboBox*>("Operation")->setCurrentText( inf.operation );
+        wgt->findChild<QLineEdit*>("InputValue")->setText( inf.value );
     }
     for(int i{0}; i <= and_lbls_cnt; ++i)
         updateFilterSection(i);

@@ -44,7 +44,6 @@ protected:
     void fillFieldsBox(QComboBox *box, const QMap<QString, QString>& labels, int idx = -1 );
     void fillOperationsBox(const QString &field);
     void addBtns(QVBoxLayout *main_layout);
-    void addSubFilter();
     void deleteDataFilter();
     void submit();
     void clear();
@@ -65,6 +64,7 @@ public:
     QList<QWidget*> extractFilter();
     QWidget* copyLineWidget(QWidget* line);
     QWidget* addFilterLine(bool isAddToMainLayout = true);
+    QWidget* addSubFilter();
 
     enum class Field { Metric, Value, Labels };
     static QString getFieldView(Field field);
@@ -79,11 +79,11 @@ signals:
     void filteredData(const QVector<Token> &data);
     void filterTemplate(const QString& name);
     void status(const QString& status);
-    void blockAddDeleteOperation(bool block);
+    void toClear(bool is_clear);
 protected:
     QVector<Token> data;
     QMap<QString, QString> labels;
-    QMap<QString, QList<QWidget*>> filter_templates;
+    QMap<QString, QList<Info>> filter_templates;
 
     QVector<QVector<Token>> filtered_sections;
     int section_idx;

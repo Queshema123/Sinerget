@@ -8,7 +8,7 @@ class SearchWidget : public FilterWidget
     Q_OBJECT
 
     bool is_search;
-    int element, section;
+    int element, section, element_number;
     int max;
 
     void addControlWidgets(QLayout* main_layout);
@@ -17,8 +17,12 @@ public:
 public slots:
     void next();
     void previous();
+    void find();
+private slots:
+    void clearData(bool is_clear);
 signals:
     void searchedElementIndex(qsizetype index);
+    void searchedElementNumber(qsizetype number);
 };
 
 #endif // SEARCHWIDGET_H

@@ -56,11 +56,14 @@ void Server::prepareResponce()
     QStringList files{dir.entryList()};
 
     if (files.size() < parsed_files_count)
+    {
+        --parsed_files_count;
         return;
+    }
 
     parsed_files_count = files.size();
     qsizetype idx{files.indexOf(last_parsed_file)
-                  + 1}; // Если не найдет вернет -1 + 1 = 0 - индекс первого файла)
+                  + 1}; // Если не найдет вернет -1 + 1 = 0 - индекс первого файла
     last_parsed_file = files.at(idx);
     file_watcher.setFuture(
         QtConcurrent::run(addResponce, this, path_to_files + file_separator + last_parsed_file));

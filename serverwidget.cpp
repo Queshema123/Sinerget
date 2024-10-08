@@ -111,5 +111,8 @@ void ServerWidget::selectRow(qsizetype row)
 {
     QModelIndex idx{ model->index(row, 0) };
     if( idx.isValid() )
+    {
+        view->scrollTo(idx);
         view->selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    }
 }
