@@ -10,8 +10,6 @@
 // Добавить объект класса фильтра в реализацию QSortFilterProxyModel
 // Добавить объект класса фильтра в реализацию SearchedWidget'а
 
-// Поправить баг, с отсутствием данных при переключении шаблонов
-
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);

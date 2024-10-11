@@ -11,9 +11,8 @@ Server::Server(quint16 port, QObject *parent)
     , port{port}
     , subdomain{"/metrics"}
     , last_parsed_file{""}
-    , path_to_files{"C:\\Users\\admin\\Documents\\QtProjects\\logs"}
-    , file_separator{"//"}
-    , parsed_files_count{0}
+    , path_to_files{""}
+    , file_separator{"/"}
     , responce{""}
 {
     server = new QHttpServer(this);
@@ -29,6 +28,7 @@ Server::Server(quint16 port, QObject *parent)
         QHttpServerResponse resp(responce);
         return resp;
     });
+
     server->listen(QHostAddress::LocalHost, port);
     dir_watcher = new QFileSystemWatcher(this);
     dir_watcher->addPath(path_to_files);
@@ -46,6 +46,8 @@ void Server::addResponce(const QString &path_to_file)
 {
     all_data.push_back(Converter::parseFile(path_to_file));
     responces.append(Converter::convertToPrometheus(all_data.last()));
+    qDebug() << path_to_file;
+    QFile::remove(path_to_file);
 }
 
 void Server::prepareResponce()
@@ -55,16 +57,10 @@ void Server::prepareResponce()
     dir.setFilter(QDir::Readable | QDir::Files);
     QStringList files{dir.entryList()};
 
-    if (files.size() < parsed_files_count)
-    {
-        --parsed_files_count;
+    if (files.size() == 0)
         return;
-    }
 
-    parsed_files_count = files.size();
-    qsizetype idx{files.indexOf(last_parsed_file)
-                  + 1}; // Если не найдет вернет -1 + 1 = 0 - индекс первого файла
-    last_parsed_file = files.at(idx);
+    last_parsed_file = path_to_files + file_separator + files[0];
     file_watcher.setFuture(
-        QtConcurrent::run(addResponce, this, path_to_files + file_separator + last_parsed_file));
+        QtConcurrent::run(addResponce, this, last_parsed_file) );
 }

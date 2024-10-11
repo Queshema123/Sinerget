@@ -17,7 +17,7 @@ ServerWidget::ServerWidget(quint16 port, QWidget *parent)
 {
     server = new Server(port, this);
     timer = new QTimer(this);
-    timer->setInterval(60000);
+    timer->setInterval(1000);
 
     QVBoxLayout *main_layout = new QVBoxLayout(this);
 

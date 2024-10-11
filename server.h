@@ -20,7 +20,6 @@ class Server : public QObject
     QVector<Token> responce_data;
     QFileSystemWatcher *dir_watcher;
     QFutureWatcher<void> file_watcher;
-    int parsed_files_count;
 
 public:
     Server(quint16 port, QObject *parent = nullptr);
