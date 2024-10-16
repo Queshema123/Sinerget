@@ -2,10 +2,10 @@
 #define SERVER_H
 
 #include <QFileSystemWatcher>
-#include <QFutureWatcher>
 #include <QString>
-#include <QVector>
+#include <QList>
 #include <QtHttpServer>
+#include <QStandardItemModel>
 #include "token.h"
 
 class Server : public QObject
@@ -14,22 +14,22 @@ class Server : public QObject
 
     QHttpServer *server;
     quint16 port;
-    QString path_to_files, subdomain, last_parsed_file, file_separator, responce;
-    QStringList responces;
-    QVector<QVector<Token>> all_data;
-    QVector<Token> responce_data;
+    QString path_to_files, subdomain, responce;
+
+    QStandardItemModel* model;
     QFileSystemWatcher *dir_watcher;
-    QFutureWatcher<void> file_watcher;
 
 public:
     Server(quint16 port, QObject *parent = nullptr);
     void addResponce(const QString &path_to_file);
     void prepareResponce();
 
+    void setData(const QList<Token>& tokens);
     void setPathToFiles(const QString &path);
     inline QString getPathToFiles() const { return path_to_files; }
-    inline QString getResponce() const { return responce; }
-    inline const QVector<Token> &getData() const { return responce_data; }
+    inline QStandardItemModel* getData() const { return model; }
+signals:
+    void responceData(QAbstractItemModel* model);
 };
 
 #endif // SERVER_H

@@ -18,20 +18,6 @@ QString Converter::prepareData(QFile &file)
     return str;
 }
 
-void Converter::addGroupLabel(Token &token)
-{
-    QString metric_name = token.getMetricName();
-    qsizetype pos{metric_name.indexOf('_')};
-    if (pos == -1)
-        return;
-
-    QString group_name{metric_name.mid(0, pos)};
-    if (reserved_words.indexOf(group_name) != -1)
-        group_name = metric_name.mid(pos + 1);
-
-    token.addLabel("group", group_name);
-}
-
 void Converter::changeMetricValue(Token &token)
 {
     auto it = token.getLabels().find("value");
@@ -55,8 +41,6 @@ QVector<Token> Converter::parseNodeChilds(const QDomNode &node)
         } else {
             Token t{n.nodeName(), n.attributes()};
             changeMetricValue(t);
-            addGroupLabel(t);
-            t.addLabel("parent", node.nodeName());
             tokens.push_back(t);
         }
     }
@@ -72,7 +56,6 @@ QVector<Token> Converter::parseDocument(const QDomDocument &doc)
     while (!node.isNull()) {
         Token tmp{node.nodeName(), node.attributes()};
         changeMetricValue(tmp);
-        addGroupLabel(tmp);
 
         if (node.hasChildNodes()) {
             tokens.append(parseNodeChilds(node));

@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QStatusBar>
+#include <QtConcurrent>
 #include "converter.h"
 
 void MainWindow::changeMenuBar(QMenuBar *menu)
@@ -40,15 +41,30 @@ QMenuBar* MainWindow::createMenuBar()
     QAction *filter_act = new QAction("Фильтр");
     QAction* search_act = new QAction("Поиск");
 
-    connect(path_to_files_act, &QAction::triggered, server_wgt, &ServerWidget::changePathToFiles);
-    connect(filter_act,        &QAction::triggered, filter_wgt, &FilterWidget::show);
-    connect(search_act,        &QAction::triggered, searched_wgt, &SearchWidget::show);
-    connect(filter_wgt, &FilterWidget::filteredData, server_wgt, &ServerWidget::setData);
-    connect(server_wgt, &ServerWidget::responceData, filter_wgt, &FilterWidget::setData);
+    connect(path_to_files_act, &QAction::triggered,         server_wgt,   &ServerWidget::changePathToFiles);
+    connect(filter_act,        &QAction::triggered,         filter_wgt,   [this]()
+    {
+        filter_wgt->setData( server_wgt->getModel() );
+        filter_wgt->show();
+    } );
+    connect(search_act,        &QAction::triggered,         searched_wgt, [this]()
+    {
+        searched_wgt->setData( server_wgt->getModel() );
+        searched_wgt->show();
+    } );
+
+    connect(filter_wgt,        &FilterWidget::info,         server_wgt,   &ServerWidget::setData);
+    connect(server_wgt,        &ServerWidget::modelData,    filter_wgt,   [this](QAbstractItemModel* model) {
+        if(filter_wgt->isVisible())
+            filter_wgt->setData(model);
+    } );
     // Search
-    connect(filter_wgt,   &FilterWidget::filteredData,         searched_wgt, &SearchWidget::setData);
-    connect(server_wgt,   &ServerWidget::responceData,         searched_wgt, &SearchWidget::setData);
-    connect(searched_wgt, &SearchWidget::searchedElementIndex, server_wgt,   &ServerWidget::selectRow);
+    connect(filter_wgt,     &FilterWidget::info,                 searched_wgt, &SearchWidget::changeInfo);
+    connect(server_wgt,     &ServerWidget::modelData,            searched_wgt, [this](QAbstractItemModel* model) {
+        if(searched_wgt->isVisible())
+            searched_wgt->setData(model);
+    });
+    connect(searched_wgt,   &SearchWidget::selectIndex,          server_wgt,   &ServerWidget::selectRow);
 
     data_menu->addAction(filter_act);
     data_menu->addAction(search_act);

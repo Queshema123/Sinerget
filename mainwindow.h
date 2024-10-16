@@ -2,8 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QMap>
-#include <QStyle>
+#include <QFuture>
 #include "filterwidget.h"
 #include "serverwidget.h"
 #include "searchwidget.h"
@@ -15,6 +14,7 @@ class MainWindow : public QMainWindow
     ServerWidget *server_wgt;
     FilterWidget *filter_wgt;
     SearchWidget *searched_wgt;
+    QFuture<void> filter_ready, search_ready;
 public:
     MainWindow(QWidget *parent = nullptr);
     QWidget* createToolsWidgets();

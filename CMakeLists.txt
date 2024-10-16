@@ -33,9 +33,13 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 	server.h server.cpp
 	serverwidget.h serverwidget.cpp
 	filterwidget.h filterwidget.cpp
-	type.h type.cpp
+
         searchwidget.h searchwidget.cpp
         themes.qrc
+        infobox.h infobox.cpp
+        info.h
+        filter.h filter.cpp
+        customproxymodel.h customproxymodel.cpp
 
 
 

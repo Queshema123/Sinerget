@@ -2,14 +2,14 @@
 #define SEARCHWIDGET_H
 
 #include "filterwidget.h"
+#include "customproxymodel.h"
 
 class SearchWidget : public FilterWidget
 {
     Q_OBJECT
 
-    bool is_search;
-    int element, section, element_number;
-    int max;
+    CustomProxyModel* finded_item_model;
+    int row, max;
 
     void addControlWidgets(QLayout* main_layout);
 public:
@@ -18,11 +18,13 @@ public slots:
     void next();
     void previous();
     void find();
-private slots:
-    void clearData(bool is_clear);
+    void findValues(const QList<Info> &info);
+    void setData(QAbstractItemModel* model);
+    void changeInfo(const QList<Info>& info);
 signals:
-    void searchedElementIndex(qsizetype index);
-    void searchedElementNumber(qsizetype number);
+    void selectIndex(QModelIndex idx);
+    void changeCurrentElement(int number);
+    void setMaxElementNumber(int max);
 };
 
 #endif // SEARCHWIDGET_H
