@@ -3,7 +3,6 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QWidget>
-#include <QtConcurrent>
 
 SearchWidget::SearchWidget(QWidget* parent) :
     FilterWidget{parent}, finded_item_model{nullptr}, row{0}, max{1}
@@ -11,9 +10,10 @@ SearchWidget::SearchWidget(QWidget* parent) :
     finded_item_model = new CustomProxyModel(this);
     addControlWidgets(this->layout());
     QPushButton* btn = this->findChild<QPushButton*>("SubmitButton");
-    disconnect(btn, &QPushButton::clicked,   this, &SearchWidget::submit);
+    disconnect(btn, &QPushButton::clicked,   this, &FilterWidget::submit);
     connect(btn,    &QPushButton::clicked,   this, &SearchWidget::find);
-    connect(this,   &SearchWidget::info,     this, &SearchWidget::findValues);
+    connect(this,   &FilterWidget::info,     this, &SearchWidget::findValues);
+    connect(this,   &FilterWidget::isClear,  this, &SearchWidget::clearSwitch);
 }
 
 void SearchWidget::addControlWidgets(QLayout* main_layout)
@@ -52,33 +52,41 @@ void SearchWidget::addControlWidgets(QLayout* main_layout)
     connect(prev_btn, &QPushButton::clicked, this, &SearchWidget::previous);
     connect(next_btn, &QPushButton::clicked, this, &SearchWidget::next);
     connect(this, &SearchWidget::changeCurrentElement, curr_elem_lbl, [curr_elem_lbl, this](int i){ curr_elem_lbl->setText( QString::number( i ) ); });
-    connect(this, &SearchWidget::setMaxElementNumber, this, [max_element_lbl, this](int m) { max_element_lbl->setText( QString::number(m) ); } );
+    connect(this, &SearchWidget::setMaxElementNumber, this, [max_element_lbl, this](int m)
+    {
+        max = (m > 0) ? m : 1;
+        max_element_lbl->setText( QString::number(max) );
+    } );
 }
 
 void SearchWidget::next()
 {
     row = (row+1 < max) ? row+1 : row;
-    emit selectIndex( finded_item_model->index(row, 0) );
+    int model_row{ finded_item_model->getRowIndex(row) };
+    emit selectIndex( model_row );
+    emit changeCurrentElement(row+1);
 }
 
 void SearchWidget::previous()
 {
     row = (row-1 >= 0) ? row-1 : row;
-    emit selectIndex( finded_item_model->index(row, 0) );
+    int model_row{ finded_item_model->getRowIndex(row) };
+    emit selectIndex( model_row );
+    emit changeCurrentElement(row+1);
 }
 
 void SearchWidget::setData(QAbstractItemModel* model)
 {
     FilterWidget::setData(model);
     finded_item_model->setSourceModel(model);
-    max = finded_item_model->rowCount();
-    emit setMaxElementNumber(max);
+    emit setMaxElementNumber(finded_item_model->getRowCount());
 }
 
-void SearchWidget::findValues(const QList<Info> &info)
+void SearchWidget::findValues(const QList<QList<Info>>& info)
 {
     finded_item_model->setFilterConditions(info);
-    emit status("Найдено - " + QString::number(finded_item_model->rowCount()));
+    emit status("Найдено - " + QString::number(finded_item_model->getRowCount()));
+    emit setMaxElementNumber(finded_item_model->getRowCount() );
 }
 
 void SearchWidget::find()
@@ -87,7 +95,13 @@ void SearchWidget::find()
     emit this->status("Поиск");
 }
 
-void SearchWidget::changeInfo(const QList<Info>& info)
+void SearchWidget::changeInfo(const QList<QList<Info>>& info)
 {
     finded_item_model->setFilterConditions(info);
+}
+
+void SearchWidget::clearSwitch()
+{
+    emit setMaxElementNumber(1);
+    emit changeCurrentElement(1);
 }

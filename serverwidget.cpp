@@ -10,7 +10,6 @@
 #include <QTreeView>
 #include <QMessageBox>
 
-
 ServerWidget::ServerWidget(quint16 port, QWidget *parent)
     : QWidget{parent}
     , server{nullptr}
@@ -34,7 +33,7 @@ void ServerWidget::setupModelAndView(QLayout* main_layout)
     view->show();
 }
 
-void ServerWidget::setData(const QList<Info>& info)
+void ServerWidget::setData(const QList<QList<Info>>& info)
 {
     proxy_model->setFilterConditions(info);
 }
@@ -53,11 +52,12 @@ void ServerWidget::changeDataView()
     QMessageBox::information(this, "Смена отображения", "");
 }
 
-void ServerWidget::selectRow(QModelIndex row)
+void ServerWidget::selectRow(qsizetype row)
 {
-    if( row.isValid() )
+    QModelIndex finded_row{ proxy_model->index(row, 0) };
+    if( finded_row.isValid() )
     {
-        view->scrollTo(row);
-        view->selectionModel()->select(row, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        view->scrollTo(finded_row);
+        view->selectionModel()->select(finded_row, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     }
 }

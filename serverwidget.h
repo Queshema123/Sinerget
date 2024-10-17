@@ -25,9 +25,9 @@ public:
     QAbstractItemModel* getModel() { return proxy_model; }
 public slots:
     void setPath();
-    void setData(const QList<Info>& info);
+    void setData(const QList<QList<Info>>& info);
     void changeDataView();
-    void selectRow(QModelIndex row);
+    void selectRow(qsizetype row);
 signals:
     void changePathToFiles();
     void status(const QString& status);

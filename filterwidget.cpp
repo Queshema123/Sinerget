@@ -47,6 +47,7 @@ void FilterWidget::addBtns(QVBoxLayout *main_layout)
     connect(clear_btn,  &QPushButton::clicked, this, &FilterWidget::clearLayout);
     connect(and_btn,    &QPushButton::clicked, this, &FilterWidget::addOperationAND);
     connect(save_btn,   &QPushButton::clicked, this, &FilterWidget::saveFilterTemplate);
+    connect(templates_box, &QComboBox::currentTextChanged, this, &FilterWidget::applyFilterTemplate);
 }
 
 FilterWidget::FilterWidget(QWidget *parent)
@@ -57,17 +58,15 @@ FilterWidget::FilterWidget(QWidget *parent)
     addBtns(main_layout);
 }
 
-QList<Info> FilterWidget::getAllInfo() const
+QList<QList<Info>> FilterWidget::getAllInfo() const
 {
-    QList<Info> conditions;
+    QList<QList<Info>> conditions;
 
     foreach (QWidget* wgt, info_wgts)
     {
         InfoBox* box = qobject_cast<InfoBox*>(wgt);
         if(box)
             conditions.append( box->getInfo() );
-        else
-            conditions.append( Info("", "AND", "") );
     }
 
     return conditions;
@@ -142,7 +141,7 @@ void FilterWidget::saveFilterTemplate()
 {
     QString name{ QInputDialog::getText(this, "Имя шаблона", "Введите имя шаблона") };
     filter_templates.insert(name,  getAllInfo() );
-
+    this->findChild<QComboBox*>("FilterTemplatesBox")->addItem(name);
     emit templateName( name );
 }
 
@@ -160,6 +159,7 @@ void FilterWidget::clearLayout()
     addLine = false;
     emit status("Очистка");
     emit info( {} );
+    emit isClear();
 }
 
 void FilterWidget::applyFilterTemplate(const QString& name)
@@ -168,16 +168,14 @@ void FilterWidget::applyFilterTemplate(const QString& name)
     if(name == "Пусто")
         return;
 
-    QList<Info> info{ filter_templates[name] };
-    const Info and_op("", "AND", "");
-    for(int start = 0, end = 0; start < info.size(); )
+    for(int i{0}; i < filter_templates[name].size(); ++i )
     {
-        end = info.indexOf(and_op, start);
-        InfoBox* box = new InfoBox( this, info.sliced(start, end-start) );
+        InfoBox* box = new InfoBox( this, filter_templates[name][i] );
         info_wgts.append(box);
         this->layout()->addWidget(box);
-        this->addOperationAND();
-        start = end+1;
+
+        if(i != filter_templates[name].size()-1)
+            this->addOperationAND();
     }
 }
 

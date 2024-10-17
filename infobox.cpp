@@ -12,8 +12,9 @@ InfoBox::InfoBox(QWidget* parent, const QList<Info> &info)
     foreach (const Info& inf, info)
     {
         this->setFields( {inf.field} );
-        this->setOperations( {inf.operation} );
         this->addFilterLine();
+        this->setOperations( {inf.operation} );
+        last_clicked_wgt->findChild<QLineEdit*>("InputValue")->setText(inf.value);
     }
 }
 
