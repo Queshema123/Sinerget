@@ -7,8 +7,34 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QStatusBar>
-#include <QtConcurrent>
-#include "converter.h"
+#include <QDir>
+#include <QByteArray>
+
+void MainWindow::fillThemeMenu(QMenu* menu)
+{
+    QDir dir{"://Styles/"};
+    if(!dir.exists())
+    {
+        qWarning() << "Can't open dir with themes. Path is - " << dir.absolutePath();
+        return;
+    }
+    dir.setFilter(QDir::Readable | QDir::Files);
+    dir.setNameFilters( {"*.qss"} );
+    QStringList files{ dir.entryList() };
+    QFile file;
+    foreach (const QString& file_name, files)
+    {
+        file.setFileName(dir.absoluteFilePath(file_name));
+        if(!file.open(QFile::ReadOnly))
+            continue;
+
+        QString style_sheet{ QLatin1String(file.readAll()) };
+        QAction* act = new QAction(file_name.mid(0, file_name.indexOf('.')));
+        connect(act, &QAction::triggered, this, [this, style_sheet](){ emit themeStyleSheet(style_sheet); });
+        menu->addAction(act);
+        file.close();
+    }
+}
 
 void MainWindow::changeMenuBar(QMenuBar *menu)
 {
@@ -74,19 +100,7 @@ QMenuBar* MainWindow::createMenuBar()
     QMenu *view_menu = new QMenu("Отображение");
     QAction *view_act = new QAction("Сменить");
     QMenu *theme_menu = new QMenu("Темы");
-    QAction* black_theme = new QAction("Темная");
-    QAction* white_theme = new QAction("Светлая");
-    connect(black_theme, &QAction::triggered, this, [this]()
-    {
-        emit styleToWidget( getThemeStyleSheet(Theme::Black) );
-    });
-    connect(white_theme, &QAction::triggered, this, [this]()
-    {
-        emit styleToWidget( getThemeStyleSheet(Theme::White) );
-    });
-
-    theme_menu->addAction(black_theme);
-    theme_menu->addAction(white_theme);
+    fillThemeMenu(theme_menu);
 
     view_menu->addAction(view_act);
     view_menu->addMenu(theme_menu);
@@ -102,23 +116,6 @@ QMenuBar* MainWindow::createMenuBar()
     return menu_bar;
 }
 
-QString MainWindow::getThemeStyleSheet(Theme theme)
-{
-    QFile style_sheet_file;
-    switch (theme) {
-    case Theme::Black:
-        style_sheet_file.setFileName("://Styles/Combinear.qss");
-        break;
-    case Theme::White:
-        style_sheet_file.setFileName("://Styles/Integrid.qss");
-        break;
-    default:
-        break;
-    }
-    style_sheet_file.open(QFile::ReadOnly);
-    return QLatin1String(style_sheet_file.readAll());
-}
-
 QStatusBar* MainWindow::createStatusBar()
 {
     QStatusBar* status_bar = new QStatusBar;
@@ -130,10 +127,7 @@ QStatusBar* MainWindow::createStatusBar()
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , server_wgt{nullptr}
-    , filter_wgt{nullptr}
-    , searched_wgt{nullptr}
+    : QMainWindow(parent), server_wgt{nullptr}, filter_wgt{nullptr}, searched_wgt{nullptr}
 {
     QWidget *main_wgt = new QWidget;
     main_wgt->setObjectName("MainWidget");
