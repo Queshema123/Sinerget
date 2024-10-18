@@ -3,16 +3,12 @@
 #include <QDir>
 #include <QHttpServerResponse>
 #include <QtConcurrent>
-#include <QFuture>
+#include <algorithm>
+#include <numeric>
 
 Server::Server(quint16 port, QObject *parent)
-    : QObject{parent}
-    , server{nullptr}
-    , port{port}
-    , subdomain{"/metrics"}
-    , path_to_files{""}
-    , responce{""}
-    , model{nullptr}
+    : QObject{parent} , server{nullptr}, port{port}
+    , subdomain{"/metrics"}, path_to_files{""}, responce{""} , model{nullptr}
 {
     server = new QHttpServer(this);
     server->route(subdomain, [this]() {
@@ -20,7 +16,7 @@ Server::Server(quint16 port, QObject *parent)
         return resp;
     });
 
-    server->listen(QHostAddress::LocalHost, port);
+    server->listen(QHostAddress::Any, port);
     dir_watcher = new QFileSystemWatcher(this);
     dir_watcher->addPath(path_to_files);
     connect(dir_watcher, &QFileSystemWatcher::directoryChanged, this, &Server::prepareResponce);
@@ -34,8 +30,27 @@ void Server::setPathToFiles(const QString &path)
     path_to_files = path;
 }
 
-void Server::setData(const QList<Token>& tokens)
+void Server::deleteUnusedMetrics(QList<Token> &data)
 {
+    QRegularExpression reg_exp{"([a-zA-z]+)"};
+    const double eps{ std::numeric_limits<double>().epsilon() };
+    auto isUnused = [&reg_exp, &eps](const Token& t)
+    {
+        QRegularExpressionMatch match{};
+        QString parents{ t.getLabels().value("parents") };
+        parents.lastIndexOf(reg_exp, -1, &match);
+        double val{ t.getMetricValue().toDouble()};
+        return match.captured(0) == "SNObjectProxy" || match.captured(0) == "SNServerObjectProxy" || fabs(val) <= eps;
+    };
+
+    data.erase( std::remove_if(data.begin(), data.end(), isUnused), data.end() );
+}
+
+void Server::setData(const QList<Token>& data)
+{
+    auto tokens = data;
+    deleteUnusedMetrics(tokens);
+
     model->setRowCount(tokens.size());
     model->setColumnCount(2);
     model->setHeaderData(0, Qt::Horizontal, "Название");
