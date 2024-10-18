@@ -36,6 +36,7 @@ Token &Token::operator=(const Token &other)
     if (this == &other)
         return *this;
     this->metric_name = other.metric_name;
+    this->metric_value = other.metric_value;
     this->labels = other.labels;
     return *this;
 }
@@ -75,7 +76,7 @@ void Token::addLabels(const QDomNamedNodeMap &labels)
 
 bool operator==(const Token &left, const Token &right)
 {
-    return left.metric_name == right.metric_name;
+    return left.metric_name == right.metric_name && left.labels == right.labels;
 }
 
 bool operator!=(const Token &left, const Token &right)
