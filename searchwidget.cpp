@@ -12,8 +12,9 @@ SearchWidget::SearchWidget(QWidget* parent) :
     QPushButton* btn = this->findChild<QPushButton*>("SubmitButton");
     disconnect(btn, &QPushButton::clicked,   this, &FilterWidget::submit);
     connect(btn,    &QPushButton::clicked,   this, &SearchWidget::find);
-    connect(this,   &FilterWidget::info,     this, &SearchWidget::findValues);
-    connect(this,   &FilterWidget::isClear,  this, &SearchWidget::clearSwitch);
+    connect(this,   &SearchWidget::info,     this, &SearchWidget::findValues);
+    connect(this,   &SearchWidget::isClear,  this, &SearchWidget::clearSwitch);
+    this->setObjectName("SearchWidget");
 }
 
 void SearchWidget::addControlWidgets(QLayout* main_layout)
@@ -85,6 +86,7 @@ void SearchWidget::setData(QAbstractItemModel* model)
 void SearchWidget::findValues(const QList<QList<Info>>& info)
 {
     finded_item_model->setFilterConditions(info);
+    qDebug() << finded_item_model->rowCount();
     emit status("Найдено - " + QString::number(finded_item_model->getRowCount()));
     emit setMaxElementNumber(finded_item_model->getRowCount() );
 }

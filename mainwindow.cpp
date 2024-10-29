@@ -8,7 +8,6 @@
 #include <QWidget>
 #include <QStatusBar>
 #include <QDir>
-#include <QByteArray>
 
 void MainWindow::fillThemeMenu(QMenu* menu)
 {
@@ -30,7 +29,7 @@ void MainWindow::fillThemeMenu(QMenu* menu)
 
         QString style_sheet{ QLatin1String(file.readAll()) };
         QAction* act = new QAction(file_name.mid(0, file_name.indexOf('.')));
-        connect(act, &QAction::triggered, this, [this, style_sheet](){ emit themeStyleSheet(style_sheet); });
+        connect(act, &QAction::triggered, this, [this, style_sheet, file_name](){ emit themeStyleSheet(style_sheet); settings_values["theme"] = file_name; });
         menu->addAction(act);
         file.close();
     }
@@ -58,9 +57,8 @@ QWidget* MainWindow::createToolsWidgets()
     return tools_wgt;
 }
 
-QMenuBar* MainWindow::createMenuBar()
+QMenu* MainWindow::createDataMenu()
 {
-    QMenuBar *menu_bar = new QMenuBar;
     QMenu *data_menu = new QMenu("Данные");
 
     QAction *path_to_files_act = new QAction("Сменить путь к файлам");
@@ -69,15 +67,15 @@ QMenuBar* MainWindow::createMenuBar()
 
     connect(path_to_files_act, &QAction::triggered,         server_wgt,   &ServerWidget::changePathToFiles);
     connect(filter_act,        &QAction::triggered,         filter_wgt,   [this]()
-    {
-        filter_wgt->setData( server_wgt->getModel() );
-        filter_wgt->show();
-    } );
+            {
+                filter_wgt->setData( server_wgt->getModel() );
+                filter_wgt->show();
+            } );
     connect(search_act,        &QAction::triggered,         searched_wgt, [this]()
-    {
-        searched_wgt->setData( server_wgt->getModel() );
-        searched_wgt->show();
-    } );
+            {
+                searched_wgt->setData( server_wgt->getModel() );
+                searched_wgt->show();
+            } );
 
     connect(filter_wgt,        &FilterWidget::info,         server_wgt,   &ServerWidget::setData);
     connect(server_wgt,        &ServerWidget::modelData,    filter_wgt,   [this](QAbstractItemModel* model) {
@@ -85,7 +83,7 @@ QMenuBar* MainWindow::createMenuBar()
             filter_wgt->setData(model);
     } );
     // Search
-    connect(filter_wgt,     &FilterWidget::info,                 searched_wgt, &SearchWidget::changeInfo);
+    //connect(filter_wgt,     &FilterWidget::info,                 searched_wgt, &SearchWidget::changeInfo);
     connect(server_wgt,     &ServerWidget::modelData,            searched_wgt, [this](QAbstractItemModel* model) {
         if(searched_wgt->isVisible())
             searched_wgt->setData(model);
@@ -95,8 +93,12 @@ QMenuBar* MainWindow::createMenuBar()
     data_menu->addAction(filter_act);
     data_menu->addAction(search_act);
     data_menu->addAction(path_to_files_act);
-    menu_bar->addMenu(data_menu);
 
+    return data_menu;
+}
+
+QMenu* MainWindow::createViewMenu()
+{
     QMenu *view_menu = new QMenu("Отображение");
     QAction *view_act = new QAction("Сменить");
     QMenu *theme_menu = new QMenu("Темы");
@@ -107,7 +109,15 @@ QMenuBar* MainWindow::createMenuBar()
 
     connect(view_act,          &QAction::triggered, server_wgt, &ServerWidget::changeDataView);
 
-    menu_bar->addMenu(view_menu);
+    return view_menu;
+}
+
+QMenuBar* MainWindow::createMenuBar()
+{
+    QMenuBar *menu_bar = new QMenuBar;
+
+    menu_bar->addMenu(createDataMenu());
+    menu_bar->addMenu(createViewMenu());
 
     QAction *exit_act = new QAction("Выход");
     connect(exit_act,          &QAction::triggered, this,       &MainWindow::close);
@@ -127,7 +137,8 @@ QStatusBar* MainWindow::createStatusBar()
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), server_wgt{nullptr}, filter_wgt{nullptr}, searched_wgt{nullptr}
+    : QMainWindow(parent), server_wgt{nullptr}, filter_wgt{nullptr}, searched_wgt{nullptr},
+    app_settings("app_settings.ini", QSettings::IniFormat)
 {
     QWidget *main_wgt = new QWidget;
     main_wgt->setObjectName("MainWidget");
@@ -143,7 +154,36 @@ MainWindow::MainWindow(QWidget *parent)
     this->setStatusBar( createStatusBar() );
 
     main_layout->addWidget(server_wgt);
-    this->resize(800, 800);
 }
 
-MainWindow::~MainWindow() {}
+void MainWindow::saveSettings()
+{
+    app_settings.beginGroup("MainWindow");
+    app_settings.setValue("theme", settings_values["theme"]);
+    app_settings.setValue("path_to_files", server_wgt->getPathToFiles());
+    app_settings.setValue("size", this->size());
+    app_settings.endGroup();
+}
+
+void MainWindow::setupSettings()
+{
+    app_settings.beginGroup("MainWindow");
+    this->resize( app_settings.value("size").toSize() );
+    server_wgt->setPathToFiles( app_settings.value("path_to_files").toString() );
+    // Вынести ниже в отдельную функцию и использовать ее здесь и в fillThemeMenu
+    settings_values["size"] = app_settings.value("size").toString();
+    settings_values["path_to_files"] = app_settings.value("path_to_files").toString();
+    settings_values["theme"] = app_settings.value("theme").toString();
+
+    QFile file( "://Styles/" + app_settings.value("theme").toString() );
+    if(!file.open(QFile::ReadOnly))
+        return;
+    QString style_sheet{ QLatin1String(file.readAll()) };
+    emit themeStyleSheet(style_sheet);
+    app_settings.endGroup();
+}
+
+MainWindow::~MainWindow()
+{
+    saveSettings();
+}
