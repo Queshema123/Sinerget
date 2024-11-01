@@ -14,9 +14,12 @@ protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 public:
     CustomProxyModel(QObject* parent = nullptr);
-    void setFilterConditions(const QList<Info> &conditions) { this->conditions = conditions; invalidateFilter(); }
+    void setFilterConditions(const QList<QList<Info>>& info);
+    int getRowIndex(int row) const { return (row < rows_indexes.size()) ? rows_indexes[row] : 0; }
+    int getRowCount() const { return rows_indexes.size(); }
 private:
-    QList<Info> conditions;
+    QList<QList<Info>> conditions;
+    mutable QList<int> rows_indexes;
 };
 
 #endif // CUSTOMPROXYMODEL_H

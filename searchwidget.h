@@ -18,11 +18,12 @@ public slots:
     void next();
     void previous();
     void find();
-    void findValues(const QList<Info> &info);
+    void clearSwitch();
+    void findValues(const QList<QList<Info>>& info);
     void setData(QAbstractItemModel* model);
-    void changeInfo(const QList<Info>& info);
+    void changeInfo(const QList<QList<Info>>& info);
 signals:
-    void selectIndex(QModelIndex idx);
+    void selectIndex(qsizetype idx);
     void changeCurrentElement(int number);
     void setMaxElementNumber(int max);
 };

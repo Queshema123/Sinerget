@@ -47,6 +47,7 @@ void FilterWidget::addBtns(QVBoxLayout *main_layout)
     connect(clear_btn,  &QPushButton::clicked, this, &FilterWidget::clearLayout);
     connect(and_btn,    &QPushButton::clicked, this, &FilterWidget::addOperationAND);
     connect(save_btn,   &QPushButton::clicked, this, &FilterWidget::saveFilterTemplate);
+    connect(templates_box, &QComboBox::currentTextChanged, this, &FilterWidget::applyFilterTemplate);
 }
 
 FilterWidget::FilterWidget(QWidget *parent)
@@ -55,19 +56,20 @@ FilterWidget::FilterWidget(QWidget *parent)
     setModal(true);
     QVBoxLayout *main_layout = new QVBoxLayout(this);
     addBtns(main_layout);
+    this->setObjectName("FilterWidget");
+    connect(this, &FilterWidget::rejected, this, &FilterWidget::saveSettins);
+    setupSettings();
 }
 
-QList<Info> FilterWidget::getAllInfo() const
+QList<QList<Info>> FilterWidget::getAllInfo() const
 {
-    QList<Info> conditions;
+    QList<QList<Info>> conditions;
 
     foreach (QWidget* wgt, info_wgts)
     {
         InfoBox* box = qobject_cast<InfoBox*>(wgt);
         if(box)
             conditions.append( box->getInfo() );
-        else
-            conditions.append( Info("", "AND", "") );
     }
 
     return conditions;
@@ -138,12 +140,17 @@ void FilterWidget::addOperationAND()
     addLine = false;
 }
 
+void FilterWidget::addTemplate(const QString& name)
+{
+    this->findChild<QComboBox*>("FilterTemplatesBox")->addItem(name);
+    emit templateName( name );
+}
+
 void FilterWidget::saveFilterTemplate()
 {
     QString name{ QInputDialog::getText(this, "Имя шаблона", "Введите имя шаблона") };
     filter_templates.insert(name,  getAllInfo() );
-
-    emit templateName( name );
+    addTemplate(name);
 }
 
 void FilterWidget::clearLayout()
@@ -160,6 +167,7 @@ void FilterWidget::clearLayout()
     addLine = false;
     emit status("Очистка");
     emit info( {} );
+    emit isClear();
 }
 
 void FilterWidget::applyFilterTemplate(const QString& name)
@@ -168,16 +176,14 @@ void FilterWidget::applyFilterTemplate(const QString& name)
     if(name == "Пусто")
         return;
 
-    QList<Info> info{ filter_templates[name] };
-    const Info and_op("", "AND", "");
-    for(int start = 0, end = 0; start < info.size(); )
+    for(int i{0}; i < filter_templates[name].size(); ++i )
     {
-        end = info.indexOf(and_op, start);
-        InfoBox* box = new InfoBox( this, info.sliced(start, end-start) );
+        InfoBox* box = new InfoBox( this, filter_templates[name][i] );
         info_wgts.append(box);
         this->layout()->addWidget(box);
-        this->addOperationAND();
-        start = end+1;
+
+        if(i != filter_templates[name].size()-1)
+            this->addOperationAND();
     }
 }
 
@@ -204,3 +210,68 @@ void FilterWidget::deleteLastLine()
         info_wgts.removeLast();
     }
 }
+
+void FilterWidget::saveSettins()
+{
+    QSettings wgt_settings(this->objectName()+"_settings.ini", QSettings::IniFormat);
+    wgt_settings.beginGroup(this->objectName());
+
+    foreach(const QString& key, filter_templates.keys())
+    {
+        wgt_settings.beginGroup(key);
+        for(int i{0}; i < filter_templates[key].size(); ++i)
+        {
+            wgt_settings.beginGroup(QString::number(i));
+            int j{0};
+            foreach(const Info& inf, filter_templates[key][i])
+            {
+                wgt_settings.beginGroup(QString::number(j));
+                wgt_settings.setValue( "field", inf.field );
+                wgt_settings.setValue( "operation", inf.operation);
+                wgt_settings.setValue( "value", inf.value);
+                wgt_settings.endGroup();
+                ++j;
+            }
+            wgt_settings.endGroup();
+        }
+        wgt_settings.endGroup();
+    }
+    wgt_settings.endGroup();
+    wgt_settings.sync();
+}
+
+void FilterWidget::parseSettingsFile(QSettings& wgt_settings)
+{
+    foreach (const QString& name, wgt_settings.childGroups())
+    {
+        wgt_settings.beginGroup(name);
+        QList<QList<Info>> name_info;
+        int j{0};
+        foreach (const QString& row, wgt_settings.childGroups())
+        {
+            wgt_settings.beginGroup(row);
+            QList<Info> row_info;
+            foreach (const QString& col, wgt_settings.childGroups())
+            {
+                wgt_settings.beginGroup(col);
+                row_info.append( Info(wgt_settings.value("field").toString(), wgt_settings.value("operation").toString(), wgt_settings.value("value").toString()) );
+                wgt_settings.endGroup();
+            }
+            wgt_settings.endGroup();
+            name_info.append(std::move(row_info));
+        }
+        filter_templates[name].append(std::move(name_info));
+        wgt_settings.endGroup();
+        addTemplate(name);
+    }
+}
+
+void FilterWidget::setupSettings()
+{
+    QSettings wgt_settings(this->objectName()+"_settings.ini", QSettings::IniFormat);
+    wgt_settings.beginGroup(this->objectName());
+    parseSettingsFile(wgt_settings);
+    wgt_settings.endGroup();
+}
+
+FilterWidget::~FilterWidget() { }

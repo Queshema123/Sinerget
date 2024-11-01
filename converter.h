@@ -13,8 +13,9 @@ const static QVector<QString> reserved_words = {"class", "struct"};
 
 QString prepareData(QFile &file);
 void changeMetricValue(Token &token);
+void checkParentName(const QString& name, QList<QString>& parents_names);
 
-QVector<Token> parseNodeChilds(const QDomNode &node);
+QVector<Token> parseNodeChilds(const QDomNode &node, QString& parents_names, QMap<QString, int>& parents_path);
 QVector<Token> parseDocument(const QDomDocument &doc);
 QVector<Token> parseFile(const QString &file_path);
 QString convertToPrometheus(const QVector<Token> &data);

@@ -21,10 +21,11 @@ class Server : public QObject
 
 public:
     Server(quint16 port, QObject *parent = nullptr);
+    void deleteUnusedMetrics(QList<Token> &data);
     void addResponce(const QString &path_to_file);
     void prepareResponce();
 
-    void setData(const QList<Token>& tokens);
+    void setData(const QList<Token>& data);
     void setPathToFiles(const QString &path);
     inline QString getPathToFiles() const { return path_to_files; }
     inline QStandardItemModel* getData() const { return model; }
