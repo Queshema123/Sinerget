@@ -2,8 +2,8 @@
 #include <QObject>
 #include "mainwindow.h"
 
-// РЎРґРµР»Р°С‚ С„СѓРЅРєС†РёСЋ setupSettings РґР»СЏ FilterWidget'Р°
-// РџРѕС‡РёРЅРёС‚СЊ РїРѕРёСЃРє)))
+// Файл в архив
+// Добавить опцию добавления в бд (TSDB)
 
 int main(int argc, char *argv[])
 {

@@ -199,6 +199,7 @@ void FilterWidget::deleteLastLine()
         this->layout()->removeWidget(wgt);
         wgt->deleteLater();
         addLine = true;
+        info_wgts.removeLast();
         return;
     }
 

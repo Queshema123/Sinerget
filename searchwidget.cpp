@@ -86,7 +86,6 @@ void SearchWidget::setData(QAbstractItemModel* model)
 void SearchWidget::findValues(const QList<QList<Info>>& info)
 {
     finded_item_model->setFilterConditions(info);
-    qDebug() << finded_item_model->rowCount();
     emit status("Найдено - " + QString::number(finded_item_model->getRowCount()));
     emit setMaxElementNumber(finded_item_model->getRowCount() );
 }
