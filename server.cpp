@@ -28,12 +28,16 @@ void Server::setPathToFiles(const QString &path)
     dir_watcher->removePath(path_to_files);
     dir_watcher->addPath(path);
     path_to_files = path;
+    QDir cur_dir{ path };
+    if (cur_dir.exists("parsed_files"))
+        return;
+    cur_dir.mkdir("parsed_files");
 }
 
 void Server::deleteUnusedMetrics(QList<Token> &data)
 {
     QRegularExpression reg_exp{"([a-zA-z]+)"};
-    const double eps{ std::numeric_limits<double>().epsilon() };
+    constexpr double eps{ std::numeric_limits<double>().epsilon() };
     auto isUnused = [&reg_exp, &eps](const Token& t)
     {
         QRegularExpressionMatch match{};
@@ -80,7 +84,8 @@ void Server::setData(const QList<Token>& data)
 void Server::addResponce(const QString &path_to_file)
 {
     setData( Converter::parseFile(path_to_file) );
-    QFile::remove(path_to_file);
+    qsizetype idx{ path_to_file.lastIndexOf('/') };
+    QDir().rename(path_to_file, path_to_file.mid(0, idx) + "/parsed_files/" + path_to_file.mid(idx));
 }
 
 void Server::prepareResponce()
@@ -93,5 +98,5 @@ void Server::prepareResponce()
     if (files.size() == 0)
         return;
 
-    QtConcurrent::run( addResponce, this, path_to_files + "/" + files[0] );
+    QtConcurrent::run( &Server::addResponce, this, path_to_files + "/" + files[0] );
 }
